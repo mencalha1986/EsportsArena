@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom';
 import { useAuth, clearToken } from './hooks/useAuth';
 import { useUserRole } from './hooks/useUserRole';
 import LoginPage from './pages/auth/LoginPage';
@@ -17,9 +17,16 @@ import LandingPage from './pages/landing/LandingPage';
 function NavBar() {
   const { session } = useAuth();
   const { role, isActive } = useUserRole();
+  const navigate = useNavigate();
+
+  function handleLogout() {
+    clearToken();
+    navigate('/');
+  }
+
   return (
     <nav style={{ padding: '12px 24px', background: '#1a1a2e', color: '#fff', display: 'flex', gap: 16, alignItems: 'center' }}>
-      <Link to="/championships" style={{ color: '#fff', fontWeight: 'bold', textDecoration: 'none', fontSize: 18 }}>EsportsArena</Link>
+      <Link to={session ? '/championships' : '/'} style={{ color: '#fff', fontWeight: 'bold', textDecoration: 'none', fontSize: 18 }}>EsportsArena</Link>
       <div style={{ flex: 1 }} />
       {session ? (
         <>
@@ -30,7 +37,7 @@ function NavBar() {
           {role === 'SuperAdmin' && (
             <Link to="/admin" style={{ color: '#f0a', textDecoration: 'none' }}>Admin</Link>
           )}
-          <button onClick={clearToken} style={{ background: 'transparent', color: '#ccc', border: '1px solid #555', cursor: 'pointer', padding: '4px 12px', borderRadius: 4 }}>
+          <button onClick={handleLogout} style={{ background: 'transparent', color: '#ccc', border: '1px solid #555', cursor: 'pointer', padding: '4px 12px', borderRadius: 4 }}>
             Sair
           </button>
         </>
