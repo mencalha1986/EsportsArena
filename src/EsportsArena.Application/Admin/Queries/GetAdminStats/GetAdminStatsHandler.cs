@@ -31,15 +31,15 @@ public sealed class GetAdminStatsHandler : IRequestHandler<GetAdminStatsQuery, R
             "SELECT COUNT(*) FROM championships WHERE \"Status\" = 'EnrollmentsOpen'");
 
         var gameRows = await _db.QueryAsync<dynamic>("""
-            SELECT g."Name" AS game_name, g."IconUrl" AS icon_url, COUNT(c.id) AS count
+            SELECT g."Name" AS game_name, g."IconUrl" AS icon_url, COUNT(c.id) AS championship_count
             FROM games g
             LEFT JOIN championships c ON c."GameId" = g.id
             GROUP BY g.id, g."Name", g."IconUrl"
-            ORDER BY count DESC, g."Name"
+            ORDER BY championship_count DESC, g."Name"
             """);
 
         var rankings = gameRows
-            .Select(r => new GameRankingDto((string)r.game_name, (string?)r.icon_url, (int)(long)r.count))
+            .Select(r => new GameRankingDto((string)r.game_name, (string?)r.icon_url, (int)(long)r.championship_count))
             .ToList();
 
         return Result<AdminStatsDto>.Success(new AdminStatsDto(
