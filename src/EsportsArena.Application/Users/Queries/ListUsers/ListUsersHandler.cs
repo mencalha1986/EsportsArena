@@ -13,12 +13,13 @@ public sealed class ListUsersHandler : IRequestHandler<ListUsersQuery, Result<IR
     public async Task<Result<IReadOnlyList<UserSummaryDto>>> Handle(ListUsersQuery request, CancellationToken ct)
     {
         var sql = """
-            SELECT id, platform_id, display_name, "Role" AS role, "IsActive" AS is_active,
-                   "SubscriptionNotes" AS subscription_notes, created_at
+            SELECT "Id" AS id, "PlatformId" AS platform_id, "DisplayName" AS display_name,
+                   "Role" AS role, "IsActive" AS is_active,
+                   "SubscriptionNotes" AS subscription_notes, "CreatedAt" AS created_at
             FROM users
             WHERE (@Role IS NULL OR "Role" = @Role)
               AND (@IsActive IS NULL OR "IsActive" = @IsActive)
-            ORDER BY created_at DESC
+            ORDER BY "CreatedAt" DESC
             """;
 
         var rows = await _db.QueryAsync<dynamic>(sql, new { request.Role, request.IsActive });

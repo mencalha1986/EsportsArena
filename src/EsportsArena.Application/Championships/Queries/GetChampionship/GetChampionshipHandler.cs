@@ -15,15 +15,24 @@ public sealed class GetChampionshipHandler : IRequestHandler<GetChampionshipQuer
     {
         const string sql = """
             SELECT
-                c.id, c.name, c.description, c.status, c.format,
-                c.min_stars, c.max_stars, c.game_id, c.organizer_id, c.created_at,
-                g.name AS game_name, g.inscription_mode AS game_inscription_mode,
-                g.score_display AS game_score_display,
-                u.platform_id AS organizer_platform_id
+                c."Id"              AS id,
+                c."Name"            AS name,
+                c."Description"     AS description,
+                c."Status"          AS status,
+                c."Format"          AS format,
+                c."MinStars"        AS min_stars,
+                c."MaxStars"        AS max_stars,
+                c."GameId"          AS game_id,
+                c."OrganizerId"     AS organizer_id,
+                c."CreatedAt"       AS created_at,
+                g."Name"            AS game_name,
+                g."InscriptionMode" AS game_inscription_mode,
+                g."ScoreDisplay"    AS game_score_display,
+                u."PlatformId"      AS organizer_platform_id
             FROM championships c
-            JOIN games g ON g.id = c.game_id
-            JOIN users u ON u.id = c.organizer_id
-            WHERE c.id = @Id
+            JOIN games g ON g."Id" = c."GameId"
+            JOIN users u ON u."Id" = c."OrganizerId"
+            WHERE c."Id" = @Id
             """;
 
         var row = await _db.QueryFirstOrDefaultAsync<dynamic>(sql, new { Id = request.ChampionshipId });
