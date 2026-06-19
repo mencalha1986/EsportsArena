@@ -26,7 +26,7 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.SubscriptionNotes).HasMaxLength(500);
         builder.Property(u => u.CreatedAt).IsRequired();
         builder.Property(u => u.UpdatedAt).IsRequired();
-        builder.HasIndex(u => u.SupabaseUid).IsUnique().HasFilter("supabase_uid IS NOT NULL");
+        builder.HasIndex(u => u.SupabaseUid).IsUnique().HasFilter("\"SupabaseUid\" IS NOT NULL");
         builder.HasIndex(u => u.Email).IsUnique();
         builder.HasIndex(u => u.PlatformId).IsUnique();
         builder.ToTable("users");

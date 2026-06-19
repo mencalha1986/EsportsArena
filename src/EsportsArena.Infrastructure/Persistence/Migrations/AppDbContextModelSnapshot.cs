@@ -369,7 +369,7 @@ namespace EsportsArena.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("SupabaseUid")
                         .IsUnique()
-                        .HasFilter("supabase_uid IS NOT NULL");
+                        .HasFilter("\"SupabaseUid\" IS NOT NULL");
 
                     b.ToTable("users", (string)null);
                 });

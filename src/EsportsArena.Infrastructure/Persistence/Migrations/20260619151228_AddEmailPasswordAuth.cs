@@ -51,7 +51,7 @@ namespace EsportsArena.Infrastructure.Persistence.Migrations
                 table: "users",
                 column: "SupabaseUid",
                 unique: true,
-                filter: "supabase_uid IS NOT NULL");
+                filter: "\"SupabaseUid\" IS NOT NULL");
         }
 
         /// <inheritdoc />
