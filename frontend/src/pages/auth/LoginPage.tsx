@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useNavigate, Link, Navigate } from 'react-router-dom';
 import { useAuth, saveToken } from '../../hooks/useAuth';
+import { useUserRole } from '../../hooks/useUserRole';
 import axios from 'axios';
 
 const API = import.meta.env.VITE_API_URL ?? 'https://esportsarena-mtys.onrender.com';
 
 export default function LoginPage() {
   const { session, loading } = useAuth();
+  const { role } = useUserRole();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
@@ -15,7 +17,9 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
-  if (!loading && session) return <Navigate to="/championships" replace />;
+  if (!loading && session) {
+    return <Navigate to={role === 'SuperAdmin' ? '/admin/dashboard' : '/championships'} replace />;
+  }
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();

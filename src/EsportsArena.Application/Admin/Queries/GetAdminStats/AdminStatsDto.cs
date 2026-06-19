@@ -10,4 +10,4 @@ public record AdminStatsDto(
     IReadOnlyList<GameRankingDto> GameRankings
 );
 
-public record GameRankingDto(string GameName, string? IconUrl, int ChampionshipCount);
+public record GameRankingDto(string GameName, string Category, string? IconUrl, int ChampionshipCount);
