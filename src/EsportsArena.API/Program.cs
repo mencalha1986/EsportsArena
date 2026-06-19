@@ -54,9 +54,12 @@ builder.Services.AddSignalR();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
+var allowedOrigins = builder.Configuration["Cors:AllowedOrigins"]?.Split(',')
+    ?? ["http://localhost:5173", "https://esports-arena-pi.vercel.app"];
+
 builder.Services.AddCors(opts =>
     opts.AddDefaultPolicy(policy =>
-        policy.WithOrigins(builder.Configuration["Cors:AllowedOrigins"]?.Split(',') ?? ["http://localhost:5173"])
+        policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials()));
