@@ -9,8 +9,8 @@ services:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
       - key: ConnectionStrings__DefaultConnection
-        sync: false
+        value: "Host=aws-1-us-west-2.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.rzuhfopobsedxdjthwqy;Password=i948p9K12***;SSL Mode=Require;Trust Server Certificate=true"
       - key: Supabase__Url
-        sync: false
+        value: "https://rzuhfopobsedxdjthwqy.supabase.co"
       - key: Cors__AllowedOrigins
-        sync: false
+        value: "*"
