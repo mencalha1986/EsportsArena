@@ -12,6 +12,7 @@ import DraftPage from './pages/draft/DraftPage';
 import AdminPage from './pages/admin/AdminPage';
 import OrganizerPage from './pages/organizer/OrganizerPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import LandingPage from './pages/landing/LandingPage';
 
 function NavBar() {
   const { session } = useAuth();
@@ -43,6 +44,11 @@ function NavBar() {
   );
 }
 
+function HomeRoute() {
+  const { session } = useAuth();
+  return session ? <Navigate to="/championships" replace /> : <LandingPage />;
+}
+
 function App() {
   return (
     <BrowserRouter>
@@ -62,7 +68,7 @@ function App() {
         <Route path="/organizer" element={<ProtectedRoute><OrganizerPage /></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
 
-        <Route path="/" element={<Navigate to="/championships" replace />} />
+        <Route path="/" element={<HomeRoute />} />
       </Routes>
     </BrowserRouter>
   );
