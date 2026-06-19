@@ -11,6 +11,7 @@ import LeaguePage from './pages/league/LeaguePage';
 import DraftPage from './pages/draft/DraftPage';
 import AdminPage from './pages/admin/AdminPage';
 import OrganizerPage from './pages/organizer/OrganizerPage';
+import ProtectedRoute from './components/ProtectedRoute';
 import { supabase } from './lib/supabaseClient';
 
 function NavBar() {
@@ -36,7 +37,7 @@ function NavBar() {
       ) : (
         <>
           <Link to="/login" style={{ color: '#ccc', textDecoration: 'none' }}>Entrar</Link>
-          <Link to="/register" style={{ color: '#ccc', textDecoration: 'none' }}>Cadastrar</Link>
+          <Link to="/register" style={{ color: '#0af', textDecoration: 'none', fontWeight: 600 }}>Cadastrar</Link>
         </>
       )}
     </nav>
@@ -48,16 +49,20 @@ function App() {
     <BrowserRouter>
       <NavBar />
       <Routes>
+        {/* Rotas públicas */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/profile/:platformId" element={<ProfilePage />} />
         <Route path="/championships" element={<ChampionshipsListPage />} />
-        <Route path="/championships/new" element={<NewChampionshipPage />} />
         <Route path="/championships/:id" element={<ChampionshipDetailPage />} />
-        <Route path="/championships/:id/league" element={<LeaguePage />} />
-        <Route path="/championships/:id/draft" element={<DraftPage />} />
-        <Route path="/admin" element={<AdminPage />} />
-        <Route path="/organizer" element={<OrganizerPage />} />
+
+        {/* Rotas protegidas */}
+        <Route path="/championships/new" element={<ProtectedRoute><NewChampionshipPage /></ProtectedRoute>} />
+        <Route path="/championships/:id/league" element={<ProtectedRoute><LeaguePage /></ProtectedRoute>} />
+        <Route path="/championships/:id/draft" element={<ProtectedRoute><DraftPage /></ProtectedRoute>} />
+        <Route path="/profile/:platformId" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+        <Route path="/organizer" element={<ProtectedRoute><OrganizerPage /></ProtectedRoute>} />
+        <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
+
         <Route path="/" element={<Navigate to="/championships" replace />} />
       </Routes>
     </BrowserRouter>
