@@ -12,7 +12,7 @@ interface DrawResult {
   teamStars: number;
 }
 
-const API = import.meta.env.VITE_API_URL ?? 'http://localhost:5000';
+const API = import.meta.env.VITE_API_URL ?? 'https://esportsarena-mtys.onrender.com';
 
 export default function DraftPage() {
   const { id } = useParams<{ id: string }>();

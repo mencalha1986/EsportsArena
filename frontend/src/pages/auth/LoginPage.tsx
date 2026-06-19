@@ -3,7 +3,7 @@ import { useNavigate, Link, Navigate } from 'react-router-dom';
 import { useAuth, saveToken } from '../../hooks/useAuth';
 import axios from 'axios';
 
-const API = import.meta.env.VITE_API_URL ?? 'http://localhost:5000';
+const API = import.meta.env.VITE_API_URL ?? 'https://esportsarena-mtys.onrender.com';
 
 const styles: Record<string, React.CSSProperties> = {
   page: {
