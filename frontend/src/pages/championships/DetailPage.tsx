@@ -213,15 +213,15 @@ export default function ChampionshipDetailPage() {
             borderRadius: 'var(--radius-lg)',
             padding: '24px 28px',
           }}>
-            <p style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.7, color: 'var(--text-dim)', marginBottom: 16 }}>
+            <p style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.7, color: 'var(--text-dim)', marginBottom: 20 }}>
               Ações
             </p>
 
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-              {/* Enroll */}
+              {/* Enroll row */}
               {championship.status === 'EnrollmentsOpen' && (
-                <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, flexWrap: 'wrap' }}>
                   {championship.gameInscriptionMode === 'OwnIdentity' && (
                     <div className="field" style={{ minWidth: 220 }}>
                       <label className="field-label">Nome do clube / dupla</label>
@@ -244,47 +244,53 @@ export default function ChampionshipDetailPage() {
                 </div>
               )}
 
-              {/* Organizer controls */}
+              {/* Organizer row — separated if enroll row is also shown */}
               {isOrganizer && (
                 <>
-                  {championship.status === 'Draft' && (
-                    <button className="btn btn-primary" onClick={handleOpenEnrollments} disabled={actioning}>
-                      {actioning ? 'Abrindo...' : '📋 Abrir inscrições'}
-                    </button>
-                  )}
                   {championship.status === 'EnrollmentsOpen' && (
-                    <>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', paddingTop: championship.status === 'EnrollmentsOpen' ? 4 : 0, borderTop: '1px solid var(--border)', paddingTop: 16 }}>
                       <Link to={`/championships/${id}/draft`} className="btn btn-outline">
                         🎲 Sorteio ao vivo
                       </Link>
                       <button className="btn btn-primary" onClick={handleStart} disabled={actioning}>
                         {actioning ? 'Iniciando...' : '⚡ Iniciar campeonato'}
                       </button>
-                    </>
+                    </div>
+                  )}
+                  {championship.status === 'Draft' && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <button className="btn btn-primary" onClick={handleOpenEnrollments} disabled={actioning}>
+                        {actioning ? 'Abrindo...' : '📋 Abrir inscrições'}
+                      </button>
+                    </div>
                   )}
                   {championship.status === 'InProgress' && (
-                    <Link to={`/championships/${id}/league`} className="btn btn-primary">
-                      🏆 Ver tabela / rodadas
-                    </Link>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <Link to={`/championships/${id}/league`} className="btn btn-primary">
+                        🏆 Ver tabela / rodadas
+                      </Link>
+                    </div>
                   )}
                 </>
               )}
 
               {/* Player-only: in progress */}
               {!isOrganizer && championship.status === 'InProgress' && (
-                <Link to={`/championships/${id}/league`} className="btn btn-outline">
-                  🏆 Ver tabela / rodadas
-                </Link>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <Link to={`/championships/${id}/league`} className="btn btn-outline">
+                    🏆 Ver tabela / rodadas
+                  </Link>
+                </div>
               )}
 
-              {/* No actions available */}
+              {/* No actions */}
               {championship.status === 'Finished' && (
-                <span style={{ fontSize: 13, color: 'var(--text-muted)', padding: '8px 0' }}>
+                <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
                   Este campeonato foi encerrado.
                 </span>
               )}
               {championship.status === 'Draft' && !isOrganizer && (
-                <span style={{ fontSize: 13, color: 'var(--text-muted)', padding: '8px 0' }}>
+                <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
                   Aguardando abertura das inscrições.
                 </span>
               )}
