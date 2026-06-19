@@ -118,8 +118,10 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       const { data } = await axios.post(`${API}/api/auth/login`, { email, password });
-      saveToken(data.data.accessToken);
-      navigate('/championships');
+      const token = data.data.accessToken;
+      saveToken(token);
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      navigate(payload.role === 'SuperAdmin' ? '/admin/dashboard' : '/championships');
     } catch (err: any) {
       setError(err.response?.data?.error ?? 'E-mail ou senha inválidos.');
       setSubmitting(false);

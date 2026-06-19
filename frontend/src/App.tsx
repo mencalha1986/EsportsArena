@@ -10,6 +10,7 @@ import ChampionshipDetailPage from './pages/championships/DetailPage';
 import LeaguePage from './pages/league/LeaguePage';
 import DraftPage from './pages/draft/DraftPage';
 import AdminPage from './pages/admin/AdminPage';
+import SuperAdminDashboard from './pages/admin/SuperAdminDashboard';
 import OrganizerPage from './pages/organizer/OrganizerPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import LandingPage from './pages/landing/LandingPage';
@@ -35,6 +36,9 @@ function NavBar() {
             <Link to="/organizer" style={{ color: '#0af', textDecoration: 'none' }}>Organizar</Link>
           ) : null}
           {role === 'SuperAdmin' && (
+            <Link to="/admin/dashboard" style={{ color: '#f0a', textDecoration: 'none' }}>Dashboard</Link>
+          )}
+          {role === 'SuperAdmin' && (
             <Link to="/admin" style={{ color: '#f0a', textDecoration: 'none' }}>Admin</Link>
           )}
           <button onClick={handleLogout} style={{ background: 'transparent', color: '#ccc', border: '1px solid #555', cursor: 'pointer', padding: '4px 12px', borderRadius: 4 }}>
@@ -53,7 +57,10 @@ function NavBar() {
 
 function HomeRoute() {
   const { session } = useAuth();
-  return session ? <Navigate to="/championships" replace /> : <LandingPage />;
+  const { role } = useUserRole();
+  if (!session) return <LandingPage />;
+  if (role === 'SuperAdmin') return <Navigate to="/admin/dashboard" replace />;
+  return <Navigate to="/championships" replace />;
 }
 
 function App() {
@@ -74,6 +81,7 @@ function App() {
         <Route path="/profile/:platformId" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
         <Route path="/organizer" element={<ProtectedRoute><OrganizerPage /></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
+        <Route path="/admin/dashboard" element={<ProtectedRoute><SuperAdminDashboard /></ProtectedRoute>} />
 
         <Route path="/" element={<HomeRoute />} />
       </Routes>

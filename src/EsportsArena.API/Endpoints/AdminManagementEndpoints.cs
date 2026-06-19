@@ -1,4 +1,5 @@
 using EsportsArena.API.Common;
+using EsportsArena.Application.Admin.Queries.GetAdminStats;
 using EsportsArena.Application.Users.Commands.ManageClientRole;
 using EsportsArena.Application.Users.Queries.ListUsers;
 using MediatR;
@@ -12,6 +13,14 @@ public static class AdminManagementEndpoints
         var group = app.MapGroup("/api/v1/admin/users")
             .WithTags("Admin")
             .RequireAuthorization("SuperAdminOnly");
+
+        group.MapGet("/stats", async (IMediator mediator, CancellationToken ct) =>
+        {
+            var result = await mediator.Send(new GetAdminStatsQuery(), ct);
+            return Results.Ok(ApiResponse<AdminStatsDto>.Ok(result.Value));
+        })
+        .WithName("GetAdminStats")
+        .WithSummary("Retorna métricas gerais da plataforma (SuperAdmin).");
 
         group.MapGet("/", async (string? role, bool? isActive, IMediator mediator, CancellationToken ct) =>
         {
