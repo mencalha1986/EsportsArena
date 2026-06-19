@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import './LandingPage.css';
 
@@ -53,6 +54,22 @@ const steps = [
 ];
 
 export default function LandingPage() {
+  useEffect(() => {
+    const root = document.getElementById('root');
+    if (!root) return;
+    const prev = { width: root.style.width, maxWidth: root.style.maxWidth, borderInline: root.style.borderInline, textAlign: root.style.textAlign };
+    root.style.width = '100%';
+    root.style.maxWidth = '100%';
+    root.style.borderInline = 'none';
+    root.style.textAlign = 'left';
+    return () => {
+      root.style.width = prev.width;
+      root.style.maxWidth = prev.maxWidth;
+      root.style.borderInline = prev.borderInline;
+      root.style.textAlign = prev.textAlign;
+    };
+  }, []);
+
   return (
     <div className="landing">
       {/* ── HERO ── */}
