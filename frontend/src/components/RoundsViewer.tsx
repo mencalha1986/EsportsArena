@@ -30,7 +30,7 @@ interface Props {
   onScoreUpdated: () => void;
 }
 
-export default function RoundsViewer({ rounds, scoreDisplay, onScoreUpdated }: Props) {
+export default function RoundsViewer({ rounds, onScoreUpdated }: Props) {
   const api = useApi();
   const [currentRound, setCurrentRound] = useState(0);
   const [scores, setScores] = useState<Record<string, { home: string; away: string }>>({});
@@ -38,8 +38,6 @@ export default function RoundsViewer({ rounds, scoreDisplay, onScoreUpdated }: P
 
   const round = rounds[currentRound];
   if (!round) return <p>Nenhuma rodada disponível.</p>;
-
-  const scoreUnit = scoreDisplay === 'goals' ? 'gol' : scoreDisplay === 'sets' ? 'set' : 'ponto';
 
   async function saveScore(matchId: string) {
     const s = scores[matchId];

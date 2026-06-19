@@ -53,7 +53,7 @@ export function getToken(): string | null {
 
 export function useAuth() {
   const [token, setToken] = useState<string | null>(() => getToken());
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
 
   useEffect(() => {
     function handleAuthChange() {
