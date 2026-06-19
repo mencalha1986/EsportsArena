@@ -21,12 +21,22 @@ const statusLabel: Record<string, string> = {
   Finished: 'Encerrado',
 };
 
-const statusColor: Record<string, string> = {
-  Draft: '#707090',
-  EnrollmentsOpen: '#33cc88',
-  InProgress: '#00aaff',
-  Finished: '#9090b0',
+const statusBadge: Record<string, string> = {
+  Draft: 'badge badge-muted',
+  EnrollmentsOpen: 'badge badge-green',
+  InProgress: 'badge badge-cyan',
+  Finished: 'badge badge-muted',
 };
+
+function SkeletonCard() {
+  return (
+    <div className="card" style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div className="skeleton" style={{ height: 18, width: '65%' }} />
+      <div className="skeleton" style={{ height: 13, width: '40%' }} />
+      <div className="skeleton" style={{ height: 13, width: '30%' }} />
+    </div>
+  );
+}
 
 export default function ChampionshipsListPage() {
   const api = useApi();
@@ -45,91 +55,86 @@ export default function ChampionshipsListPage() {
   }, []);
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0d0d1a', padding: '40px 24px' }}>
-      <div style={{ maxWidth: 960, margin: '0 auto' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', padding: '40px 24px' }}>
+      <div style={{ maxWidth: 1000, margin: '0 auto' }}>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 32 }}>
           <div>
-            <h2 style={{ color: '#fff', fontSize: 28, fontWeight: 800, margin: 0, letterSpacing: -0.5 }}>
+            <h2 style={{ color: '#fff', fontSize: 24, fontWeight: 800, letterSpacing: -0.5, marginBottom: 4 }}>
               Campeonatos
             </h2>
-            <p style={{ color: '#7070a0', fontSize: 14, marginTop: 4 }}>
-              {championships.length > 0 ? `${championships.length} campeonato${championships.length > 1 ? 's' : ''} encontrado${championships.length > 1 ? 's' : ''}` : 'Nenhum campeonato ainda'}
-            </p>
+            {!loading && (
+              <p className="text-muted" style={{ fontSize: 14 }}>
+                {championships.length > 0
+                  ? `${championships.length} campeonato${championships.length > 1 ? 's' : ''} encontrado${championships.length > 1 ? 's' : ''}`
+                  : 'Nenhum campeonato ainda'}
+              </p>
+            )}
           </div>
           {canCreate && (
-            <Link to="/championships/new" style={{ textDecoration: 'none' }}>
-              <button style={{
-                background: '#00aaff',
-                color: '#000',
-                border: 'none',
-                borderRadius: 8,
-                padding: '10px 20px',
-                fontWeight: 700,
-                fontSize: 14,
-                cursor: 'pointer',
-              }}>
-                + Criar campeonato
-              </button>
+            <Link to="/championships/new" className="btn btn-primary btn-sm">
+              + Criar campeonato
             </Link>
           )}
         </div>
 
+        {/* Skeleton */}
         {loading && (
-          <p style={{ color: '#7070a0', textAlign: 'center', marginTop: 60 }}>Carregando...</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+            {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
+          </div>
         )}
 
+        {/* Empty state */}
         {!loading && championships.length === 0 && (
-          <div style={{ textAlign: 'center', marginTop: 80 }}>
-            <p style={{ color: '#7070a0', fontSize: 16 }}>Nenhum campeonato encontrado.</p>
+          <div style={{
+            textAlign: 'center', padding: '80px 24px',
+            background: 'var(--surface)', borderRadius: 16,
+            border: '1px solid var(--border)',
+          }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>🏟️</div>
+            <h3 style={{ color: 'var(--text)', fontSize: 18, fontWeight: 700, marginBottom: 8 }}>
+              Nenhum campeonato ainda
+            </h3>
+            <p className="text-muted" style={{ fontSize: 14, marginBottom: 24 }}>
+              {canCreate
+                ? 'Seja o primeiro a criar um campeonato nesta plataforma.'
+                : 'Aguarde um organizador criar o próximo campeonato.'}
+            </p>
             {canCreate && (
-              <p style={{ color: '#505070', fontSize: 13, marginTop: 8 }}>
-                Crie o primeiro campeonato usando o botão acima.
-              </p>
+              <Link to="/championships/new" className="btn btn-primary">
+                + Criar primeiro campeonato
+              </Link>
             )}
           </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-          {championships.map(c => (
-            <Link key={c.id} to={`/championships/${c.id}`} style={{ textDecoration: 'none' }}>
-              <div style={{
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.07)',
-                borderRadius: 12,
-                padding: '20px 24px',
-                transition: 'border-color 0.2s, background 0.2s',
-                cursor: 'pointer',
-              }}
-                onMouseEnter={e => {
-                  (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(0,170,255,0.3)';
-                  (e.currentTarget as HTMLDivElement).style.background = 'rgba(0,170,255,0.05)';
-                }}
-                onMouseLeave={e => {
-                  (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.07)';
-                  (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.03)';
-                }}
-              >
-                <h3 style={{ color: '#e0e0ff', fontSize: 16, fontWeight: 700, margin: '0 0 8px' }}>
-                  {c.name}
-                </h3>
-                <p style={{
-                  color: statusColor[c.status] ?? '#9090b0',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  margin: '0 0 4px',
-                }}>
-                  {statusLabel[c.status] ?? c.status}
-                </p>
-                <p style={{ color: '#606080', fontSize: 13, margin: 0 }}>
-                  {c.format === 'DoubleRound' ? 'Ida e volta' : 'Somente ida'}
-                </p>
-              </div>
-            </Link>
-          ))}
-        </div>
+        {/* Grid */}
+        {!loading && championships.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+            {championships.map(c => (
+              <Link key={c.id} to={`/championships/${c.id}`} style={{ textDecoration: 'none' }}>
+                <div
+                  className="card card-hover"
+                  style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 12, cursor: 'pointer' }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                    <h3 style={{ color: 'var(--text)', fontSize: 15, fontWeight: 700, lineHeight: 1.3, flex: 1 }}>
+                      {c.name}
+                    </h3>
+                    <span className={statusBadge[c.status] ?? 'badge badge-muted'}>
+                      {statusLabel[c.status] ?? c.status}
+                    </span>
+                  </div>
+                  <p className="text-muted" style={{ fontSize: 13 }}>
+                    {c.format === 'DoubleRound' ? '↔ Ida e volta' : '→ Somente ida'}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

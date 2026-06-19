@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth, clearToken } from './hooks/useAuth';
 import { useUserRole } from './hooks/useUserRole';
 import LoginPage from './pages/auth/LoginPage';
@@ -15,8 +15,18 @@ import OrganizerPage from './pages/organizer/OrganizerPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import LandingPage from './pages/landing/LandingPage';
 
+function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
+  const { pathname } = useLocation();
+  const active = pathname === to || pathname.startsWith(to + '/');
+  return (
+    <Link to={to} className={`nav-link${active ? ' active' : ''}`}>
+      {children}
+    </Link>
+  );
+}
+
 function NavBar() {
-  const { session } = useAuth();
+  const { session, user } = useAuth();
   const { role, isActive } = useUserRole();
   const navigate = useNavigate();
 
@@ -25,31 +35,67 @@ function NavBar() {
     navigate('/');
   }
 
+  const initials = user?.platformId?.slice(0, 2).toUpperCase() ?? '??';
+
   return (
-    <nav style={{ padding: '12px 24px', background: '#1a1a2e', color: '#fff', display: 'flex', gap: 16, alignItems: 'center' }}>
-      <Link to={session ? '/championships' : '/'} style={{ color: '#fff', fontWeight: 'bold', textDecoration: 'none', fontSize: 18 }}>EsportsArena</Link>
+    <nav style={{
+      position: 'sticky', top: 0, zIndex: 100,
+      padding: '0 28px',
+      height: 56,
+      background: 'rgba(8,8,15,0.85)',
+      backdropFilter: 'blur(12px)',
+      WebkitBackdropFilter: 'blur(12px)',
+      borderBottom: '1px solid rgba(255,255,255,0.05)',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+    }}>
+      {/* Logo */}
+      <Link
+        to={session ? '/championships' : '/'}
+        style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none', marginRight: 24 }}
+      >
+        <span style={{ fontSize: 18 }}>⚔️</span>
+        <span style={{ color: 'var(--accent)', fontWeight: 800, fontSize: 17, letterSpacing: -0.3 }}>
+          EsportsArena
+        </span>
+      </Link>
+
+      {/* Nav links */}
+      {session && (
+        <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+          <NavLink to="/championships">Campeonatos</NavLink>
+          {((role === 'Admin' && isActive) || role === 'SuperAdmin') && (
+            <NavLink to="/organizer">Organizar</NavLink>
+          )}
+          {role === 'SuperAdmin' && (
+            <NavLink to="/admin/dashboard">Dashboard</NavLink>
+          )}
+          {role === 'SuperAdmin' && (
+            <NavLink to="/admin">Usuários</NavLink>
+          )}
+        </div>
+      )}
+
       <div style={{ flex: 1 }} />
+
+      {/* Right side */}
       {session ? (
-        <>
-          <Link to="/championships" style={{ color: '#ccc', textDecoration: 'none' }}>Campeonatos</Link>
-          {(role === 'Admin' && isActive) || role === 'SuperAdmin' ? (
-            <Link to="/organizer" style={{ color: '#0af', textDecoration: 'none' }}>Organizar</Link>
-          ) : null}
-          {role === 'SuperAdmin' && (
-            <Link to="/admin/dashboard" style={{ color: '#f0a', textDecoration: 'none' }}>Dashboard</Link>
-          )}
-          {role === 'SuperAdmin' && (
-            <Link to="/admin" style={{ color: '#f0a', textDecoration: 'none' }}>Admin</Link>
-          )}
-          <button onClick={handleLogout} style={{ background: 'transparent', color: '#ccc', border: '1px solid #555', cursor: 'pointer', padding: '4px 12px', borderRadius: 4 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div className="avatar" title={`@${user?.platformId}`}>{initials}</div>
+          <button
+            onClick={handleLogout}
+            className="btn btn-outline btn-sm"
+            style={{ fontSize: 13 }}
+          >
             Sair
           </button>
-        </>
+        </div>
       ) : (
-        <>
-          <Link to="/login" style={{ color: '#ccc', textDecoration: 'none' }}>Entrar</Link>
-          <Link to="/register" style={{ color: '#0af', textDecoration: 'none', fontWeight: 600 }}>Cadastrar</Link>
-        </>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Link to="/login" className="btn btn-ghost btn-sm">Entrar</Link>
+          <Link to="/register" className="btn btn-primary btn-sm">Cadastrar</Link>
+        </div>
       )}
     </nav>
   );

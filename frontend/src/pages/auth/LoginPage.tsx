@@ -5,108 +5,19 @@ import axios from 'axios';
 
 const API = import.meta.env.VITE_API_URL ?? 'https://esportsarena-mtys.onrender.com';
 
-const styles: Record<string, React.CSSProperties> = {
-  page: {
-    minHeight: '100vh',
-    background: 'linear-gradient(135deg, #0d0d1a 0%, #1a1a2e 100%)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-  },
-  card: {
-    background: '#12122a',
-    border: '1px solid #2a2a4a',
-    borderRadius: 12,
-    padding: '40px 36px',
-    width: '100%',
-    maxWidth: 420,
-    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
-  },
-  logo: {
-    color: '#00aaff',
-    fontSize: 28,
-    fontWeight: 800,
-    textAlign: 'center',
-    letterSpacing: 1,
-    marginBottom: 4,
-  },
-  subtitle: {
-    color: '#6a6a8a',
-    fontSize: 13,
-    textAlign: 'center',
-    marginBottom: 32,
-  },
-  heading: {
-    color: '#e0e0ff',
-    fontSize: 20,
-    fontWeight: 700,
-    marginBottom: 24,
-    textAlign: 'center',
-  },
-  fieldGroup: {
-    marginBottom: 16,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 6,
-  },
-  label: {
-    color: '#9090b0',
-    fontSize: 13,
-    fontWeight: 600,
-    letterSpacing: 0.5,
-  },
-  input: {
-    background: '#0d0d1a',
-    border: '1px solid #2a2a4a',
-    borderRadius: 8,
-    color: '#e0e0ff',
-    fontSize: 15,
-    padding: '10px 14px',
-    outline: 'none',
-    width: '100%',
-    boxSizing: 'border-box',
-  },
-  button: {
-    marginTop: 8,
-    width: '100%',
-    padding: '12px',
-    background: '#00aaff',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 8,
-    fontSize: 15,
-    fontWeight: 700,
-    cursor: 'pointer',
-    letterSpacing: 0.5,
-  },
-  error: {
-    background: 'rgba(255, 60, 60, 0.1)',
-    border: '1px solid rgba(255, 60, 60, 0.3)',
-    borderRadius: 8,
-    color: '#ff6b6b',
-    fontSize: 13,
-    padding: '10px 14px',
-    marginBottom: 12,
-  },
-  footer: {
-    marginTop: 24,
-    textAlign: 'center',
-    color: '#6a6a8a',
-    fontSize: 13,
-  },
-  link: {
-    color: '#00aaff',
-    textDecoration: 'none',
-    fontWeight: 600,
-  },
-};
+const features = [
+  { icon: '🏆', text: 'Campeonatos em formato liga completo' },
+  { icon: '⚡', text: 'Draft ao vivo com atualização em tempo real' },
+  { icon: '📊', text: 'Estatísticas detalhadas por jogador' },
+];
 
 export default function LoginPage() {
   const { session, loading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
+  const [shaking, setShaking] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
@@ -123,56 +34,145 @@ export default function LoginPage() {
       const payload = JSON.parse(atob(token.split('.')[1]));
       navigate(payload.role === 'SuperAdmin' ? '/admin/dashboard' : '/championships');
     } catch (err: any) {
-      setError(err.response?.data?.error ?? 'E-mail ou senha inválidos.');
+      const msg = err.response?.data?.error ?? 'E-mail ou senha inválidos.';
+      setError(msg);
+      setShaking(true);
+      setTimeout(() => setShaking(false), 400);
       setSubmitting(false);
     }
   }
 
   return (
-    <div style={styles.page}>
-      <div style={styles.card}>
-        <div style={styles.logo}>EsportsArena</div>
-        <div style={styles.subtitle}>Plataforma de campeonatos competitivos</div>
-        <div style={styles.heading}>Entrar</div>
-
-        {error && <div style={styles.error}>{error}</div>}
-
-        <form onSubmit={handleLogin}>
-          <div style={styles.fieldGroup}>
-            <label style={styles.label}>E-MAIL</label>
-            <input
-              style={styles.input}
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="seu@email.com"
-              required
-              autoFocus
-            />
+    <div className="auth-root">
+      {/* ── Painel esquerdo — branding ── */}
+      <div className="auth-brand">
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 48 }}>
+            <span style={{ fontSize: 28 }}>⚔️</span>
+            <span style={{ color: 'var(--accent)', fontSize: 22, fontWeight: 800, letterSpacing: -0.5 }}>
+              EsportsArena
+            </span>
           </div>
-          <div style={styles.fieldGroup}>
-            <label style={styles.label}>SENHA</label>
-            <input
-              style={styles.input}
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-            />
-          </div>
-          <button
-            type="submit"
-            style={{ ...styles.button, opacity: submitting ? 0.7 : 1 }}
-            disabled={submitting}
-          >
-            {submitting ? 'Entrando...' : 'Entrar'}
-          </button>
-        </form>
 
-        <div style={styles.footer}>
-          Não tem conta?{' '}
-          <Link to="/register" style={styles.link}>Cadastrar-se</Link>
+          <h1 style={{ color: '#fff', fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 800, lineHeight: 1.1, letterSpacing: -1, marginBottom: 16 }}>
+            Organize.<br />
+            Compita.<br />
+            <span style={{ color: 'var(--accent)' }}>Domine.</span>
+          </h1>
+
+          <p style={{ color: 'var(--text-muted)', fontSize: 16, lineHeight: 1.65, maxWidth: 340, marginBottom: 48 }}>
+            A plataforma completa para criar e gerenciar campeonatos de esports com profissionalismo.
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {features.map(f => (
+              <div key={f.text} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{
+                  width: 40, height: 40, borderRadius: 10,
+                  background: 'var(--accent-glow)',
+                  border: '1px solid rgba(0,170,255,0.2)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 18, flexShrink: 0,
+                }}>
+                  {f.icon}
+                </div>
+                <span style={{ color: 'var(--text-muted)', fontSize: 14, lineHeight: 1.4 }}>{f.text}</span>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ marginTop: 64, padding: '16px 20px', background: 'rgba(255,255,255,0.03)', borderRadius: 10, border: '1px solid var(--border)' }}>
+            <p style={{ color: 'var(--text-dim)', fontSize: 12, margin: 0 }}>
+              Não tem conta ainda?{' '}
+              <Link to="/register" style={{ color: 'var(--accent)', fontWeight: 700, textDecoration: 'none' }}>
+                Cadastre-se gratuitamente →
+              </Link>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Painel direito — formulário ── */}
+      <div className="auth-form-panel">
+        <div style={{ maxWidth: 360, width: '100%', margin: '0 auto' }}>
+
+          {/* Mobile logo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 40 }} className="mobile-logo">
+            <span style={{ fontSize: 22 }}>⚔️</span>
+            <span style={{ color: 'var(--accent)', fontSize: 18, fontWeight: 800 }}>EsportsArena</span>
+          </div>
+
+          <div style={{ marginBottom: 32 }}>
+            <h2 style={{ color: '#fff', fontSize: 26, fontWeight: 800, letterSpacing: -0.5, marginBottom: 6 }}>
+              Entrar na Arena
+            </h2>
+            <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>
+              Bem-vindo de volta. Insira suas credenciais.
+            </p>
+          </div>
+
+          {error && (
+            <div className={`alert alert-error fade-in ${shaking ? 'shake' : ''}`} style={{ marginBottom: 20 }}>
+              <span>⚠</span>
+              <span>{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+            <div className="field">
+              <label className="field-label">E-mail</label>
+              <input
+                className="input-field"
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="seu@email.com"
+                required
+                autoFocus
+                autoComplete="email"
+              />
+            </div>
+
+            <div className="field">
+              <label className="field-label">Senha</label>
+              <div className="input-wrapper">
+                <input
+                  className="input-field"
+                  type={showPass ? 'text' : 'password'}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  className="input-icon-right"
+                  onClick={() => setShowPass(v => !v)}
+                  tabIndex={-1}
+                  aria-label={showPass ? 'Ocultar senha' : 'Mostrar senha'}
+                >
+                  {showPass ? '🙈' : '👁'}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="btn btn-primary btn-full btn-lg"
+              style={{ marginTop: 4 }}
+              disabled={submitting}
+            >
+              {submitting ? 'Entrando...' : 'Entrar'}
+            </button>
+          </form>
+
+          <div style={{ marginTop: 28, textAlign: 'center', color: 'var(--text-dim)', fontSize: 13 }}>
+            Não tem conta?{' '}
+            <Link to="/register" style={{ color: 'var(--accent)', fontWeight: 700, textDecoration: 'none' }}>
+              Cadastrar-se
+            </Link>
+          </div>
         </div>
       </div>
     </div>

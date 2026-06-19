@@ -5,138 +5,22 @@ import { useAuth, saveToken } from '../../hooks/useAuth';
 
 const API = import.meta.env.VITE_API_URL ?? 'https://esportsarena-mtys.onrender.com';
 
-const styles: Record<string, React.CSSProperties> = {
-  page: {
-    minHeight: '100vh',
-    background: 'linear-gradient(135deg, #0d0d1a 0%, #1a1a2e 100%)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-  },
-  card: {
-    background: '#12122a',
-    border: '1px solid #2a2a4a',
-    borderRadius: 12,
-    padding: '40px 36px',
-    width: '100%',
-    maxWidth: 440,
-    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
-  },
-  logo: {
-    color: '#00aaff',
-    fontSize: 28,
-    fontWeight: 800,
-    textAlign: 'center',
-    letterSpacing: 1,
-    marginBottom: 4,
-  },
-  subtitle: {
-    color: '#6a6a8a',
-    fontSize: 13,
-    textAlign: 'center',
-    marginBottom: 32,
-  },
-  heading: {
-    color: '#e0e0ff',
-    fontSize: 20,
-    fontWeight: 700,
-    marginBottom: 24,
-    textAlign: 'center',
-  },
-  fieldGroup: {
-    marginBottom: 16,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 6,
-  },
-  label: {
-    color: '#9090b0',
-    fontSize: 13,
-    fontWeight: 600,
-    letterSpacing: 0.5,
-  },
-  input: {
-    background: '#0d0d1a',
-    border: '1px solid #2a2a4a',
-    borderRadius: 8,
-    color: '#e0e0ff',
-    fontSize: 15,
-    padding: '10px 14px',
-    outline: 'none',
-    width: '100%',
-    boxSizing: 'border-box',
-  },
-  availableMsg: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 6,
-    color: '#33cc88',
-    fontSize: 12,
-    marginTop: 4,
-  },
-  unavailableMsg: {
-    color: '#ff6b6b',
-    fontSize: 12,
-    marginTop: 4,
-  },
-  suggestionsRow: {
-    display: 'flex',
-    gap: 6,
-    flexWrap: 'wrap',
-    marginTop: 6,
-  },
-  suggestionBtn: {
-    background: 'transparent',
-    border: '1px solid #00aaff',
-    borderRadius: 6,
-    color: '#00aaff',
-    cursor: 'pointer',
-    fontSize: 12,
-    padding: '3px 10px',
-  },
-  button: {
-    marginTop: 8,
-    width: '100%',
-    padding: '12px',
-    background: '#00aaff',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 8,
-    fontSize: 15,
-    fontWeight: 700,
-    cursor: 'pointer',
-    letterSpacing: 0.5,
-  },
-  error: {
-    background: 'rgba(255, 60, 60, 0.1)',
-    border: '1px solid rgba(255, 60, 60, 0.3)',
-    borderRadius: 8,
-    color: '#ff6b6b',
-    fontSize: 13,
-    padding: '10px 14px',
-    marginBottom: 12,
-  },
-  footer: {
-    marginTop: 24,
-    textAlign: 'center',
-    color: '#6a6a8a',
-    fontSize: 13,
-  },
-  link: {
-    color: '#00aaff',
-    textDecoration: 'none',
-    fontWeight: 600,
-  },
-};
+const perks = [
+  { icon: '🎮', text: 'Escolha seu @handle único na plataforma' },
+  { icon: '🏅', text: 'Entre em campeonatos com um clique' },
+  { icon: '📈', text: 'Acompanhe seu histórico e evolução' },
+  { icon: '⚡', text: 'Receba sua equipe via draft ao vivo' },
+];
 
 export default function RegisterPage() {
   const { session, loading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPass, setShowPass] = useState(false);
   const [platformId, setPlatformId] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [availability, setAvailability] = useState<{ available: boolean; suggestions: string[] } | null>(null);
+  const [checking, setChecking] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
@@ -145,32 +29,27 @@ export default function RegisterPage() {
 
   useEffect(() => {
     if (platformId.length < 3) { setAvailability(null); return; }
+    setChecking(true);
     const timer = setTimeout(async () => {
       try {
         const { data } = await axios.get(`${API}/api/v1/users/platform-id/check?value=${encodeURIComponent(platformId)}`);
         setAvailability(data.data);
       } catch { /* ignore */ }
-    }, 300);
+      finally { setChecking(false); }
+    }, 350);
     return () => clearTimeout(timer);
   }, [platformId]);
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-
     if (availability && !availability.available) {
       setError('ID da plataforma já está em uso. Escolha outro.');
       return;
     }
-
     setSubmitting(true);
     try {
-      const { data } = await axios.post(`${API}/api/auth/register`, {
-        email,
-        password,
-        platformId,
-        displayName,
-      });
+      const { data } = await axios.post(`${API}/api/auth/register`, { email, password, platformId, displayName });
       saveToken(data.data.accessToken);
       navigate('/championships');
     } catch (err: any) {
@@ -179,93 +58,186 @@ export default function RegisterPage() {
     }
   }
 
+  const pidStatus = checking ? 'checking' : availability === null ? 'idle' : availability.available ? 'ok' : 'taken';
+
   return (
-    <div style={styles.page}>
-      <div style={styles.card}>
-        <div style={styles.logo}>EsportsArena</div>
-        <div style={styles.subtitle}>Plataforma de campeonatos competitivos</div>
-        <div style={styles.heading}>Criar conta</div>
-
-        {error && <div style={styles.error}>{error}</div>}
-
-        <form onSubmit={handleRegister}>
-          <div style={styles.fieldGroup}>
-            <label style={styles.label}>E-MAIL</label>
-            <input
-              style={styles.input}
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="seu@email.com"
-              required
-              autoFocus
-            />
+    <div className="auth-root">
+      {/* ── Painel esquerdo ── */}
+      <div className="auth-brand">
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 48 }}>
+            <span style={{ fontSize: 28 }}>⚔️</span>
+            <span style={{ color: 'var(--accent)', fontSize: 22, fontWeight: 800, letterSpacing: -0.5 }}>
+              EsportsArena
+            </span>
           </div>
 
-          <div style={styles.fieldGroup}>
-            <label style={styles.label}>SENHA</label>
-            <input
-              style={styles.input}
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="mínimo 6 caracteres"
-              required
-              minLength={6}
-            />
+          <h1 style={{ color: '#fff', fontSize: 'clamp(2rem, 4vw, 2.8rem)', fontWeight: 800, lineHeight: 1.1, letterSpacing: -1, marginBottom: 16 }}>
+            Crie sua<br />
+            <span style={{ color: 'var(--accent)' }}>Arena.</span>
+          </h1>
+
+          <p style={{ color: 'var(--text-muted)', fontSize: 15, lineHeight: 1.65, maxWidth: 340, marginBottom: 44 }}>
+            Cadastre-se gratuitamente e entre no mundo dos campeonatos de esports.
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {perks.map(p => (
+              <div key={p.text} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{
+                  width: 38, height: 38, borderRadius: 9,
+                  background: 'var(--accent-glow)',
+                  border: '1px solid rgba(0,170,255,0.2)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 17, flexShrink: 0,
+                }}>
+                  {p.icon}
+                </div>
+                <span style={{ color: 'var(--text-muted)', fontSize: 14 }}>{p.text}</span>
+              </div>
+            ))}
           </div>
 
-          <div style={styles.fieldGroup}>
-            <label style={styles.label}>ID DA PLATAFORMA (seu @)</label>
-            <input
-              style={styles.input}
-              value={platformId}
-              onChange={e => setPlatformId(e.target.value)}
-              placeholder="ex: jogador123"
-              required
-              minLength={3}
-              maxLength={30}
-            />
-            {availability !== null && (
-              availability.available
-                ? <div style={styles.availableMsg}>✓ Disponível</div>
-                : <div>
-                    <div style={styles.unavailableMsg}>✗ Já em uso. Sugestões:</div>
-                    <div style={styles.suggestionsRow}>
-                      {availability.suggestions.map(s => (
-                        <button key={s} type="button" style={styles.suggestionBtn} onClick={() => setPlatformId(s)}>
-                          {s}
-                        </button>
-                      ))}
-                    </div>
+          <div style={{ marginTop: 56, padding: '16px 20px', background: 'rgba(255,255,255,0.03)', borderRadius: 10, border: '1px solid var(--border)' }}>
+            <p style={{ color: 'var(--text-dim)', fontSize: 12, margin: 0 }}>
+              Já tem uma conta?{' '}
+              <Link to="/login" style={{ color: 'var(--accent)', fontWeight: 700, textDecoration: 'none' }}>
+                Entrar →
+              </Link>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Painel direito — formulário ── */}
+      <div className="auth-form-panel">
+        <div style={{ maxWidth: 360, width: '100%', margin: '0 auto' }}>
+
+          <div style={{ marginBottom: 28 }}>
+            <h2 style={{ color: '#fff', fontSize: 24, fontWeight: 800, letterSpacing: -0.5, marginBottom: 6 }}>
+              Criar conta
+            </h2>
+            <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>
+              Preencha os dados abaixo para começar.
+            </p>
+          </div>
+
+          {error && (
+            <div className="alert alert-error fade-in" style={{ marginBottom: 18 }}>
+              <span>⚠</span><span>{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+            <div className="field">
+              <label className="field-label">E-mail</label>
+              <input
+                className="input-field"
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="seu@email.com"
+                required
+                autoFocus
+                autoComplete="email"
+              />
+            </div>
+
+            <div className="field">
+              <label className="field-label">Senha</label>
+              <div className="input-wrapper">
+                <input
+                  className="input-field"
+                  type={showPass ? 'text' : 'password'}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="mínimo 6 caracteres"
+                  required
+                  minLength={6}
+                  autoComplete="new-password"
+                />
+                <button type="button" className="input-icon-right" onClick={() => setShowPass(v => !v)} tabIndex={-1}>
+                  {showPass ? '🙈' : '👁'}
+                </button>
+              </div>
+            </div>
+
+            <div className="field">
+              <label className="field-label">
+                ID da Plataforma
+                <span style={{ marginLeft: 6, color: 'var(--text-dim)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>
+                  — seu @handle único
+                </span>
+              </label>
+              <input
+                className={`input-field ${pidStatus === 'taken' ? 'error' : ''}`}
+                value={platformId}
+                onChange={e => setPlatformId(e.target.value.replace(/[^a-zA-Z0-9_.-]/g, ''))}
+                placeholder="ex: jogador123"
+                required
+                minLength={3}
+                maxLength={30}
+                autoComplete="off"
+              />
+
+              {pidStatus === 'checking' && (
+                <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>Verificando disponibilidade…</span>
+              )}
+              {pidStatus === 'ok' && (
+                <span className="fade-in" style={{ fontSize: 12, color: 'var(--success)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  ✓ Disponível
+                </span>
+              )}
+              {pidStatus === 'taken' && (
+                <div className="fade-in">
+                  <span style={{ fontSize: 12, color: 'var(--error)' }}>✗ Já em uso. Sugestões:</span>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
+                    {availability?.suggestions.map(s => (
+                      <button
+                        key={s}
+                        type="button"
+                        className="btn btn-ghost btn-sm"
+                        style={{ fontSize: 12, padding: '4px 10px', border: '1px solid rgba(0,170,255,0.3)', borderRadius: 6 }}
+                        onClick={() => setPlatformId(s)}
+                      >
+                        @{s}
+                      </button>
+                    ))}
                   </div>
-            )}
+                </div>
+              )}
+            </div>
+
+            <div className="field">
+              <label className="field-label">Nome de exibição</label>
+              <input
+                className="input-field"
+                value={displayName}
+                onChange={e => setDisplayName(e.target.value)}
+                placeholder="Como você quer ser chamado?"
+                required
+                maxLength={100}
+                autoComplete="off"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="btn btn-primary btn-full btn-lg"
+              style={{ marginTop: 4 }}
+              disabled={submitting || pidStatus === 'taken'}
+            >
+              {submitting ? 'Criando conta...' : 'Criar conta grátis'}
+            </button>
+          </form>
+
+          <div style={{ marginTop: 24, textAlign: 'center', color: 'var(--text-dim)', fontSize: 13 }}>
+            Já tem conta?{' '}
+            <Link to="/login" style={{ color: 'var(--accent)', fontWeight: 700, textDecoration: 'none' }}>
+              Entrar
+            </Link>
           </div>
-
-          <div style={styles.fieldGroup}>
-            <label style={styles.label}>NOME DE EXIBIÇÃO</label>
-            <input
-              style={styles.input}
-              value={displayName}
-              onChange={e => setDisplayName(e.target.value)}
-              placeholder="Como você quer ser chamado?"
-              required
-              maxLength={100}
-            />
-          </div>
-
-          <button
-            type="submit"
-            style={{ ...styles.button, opacity: submitting ? 0.7 : 1 }}
-            disabled={submitting}
-          >
-            {submitting ? 'Criando conta...' : 'Criar conta'}
-          </button>
-        </form>
-
-        <div style={styles.footer}>
-          Já tem conta?{' '}
-          <Link to="/login" style={styles.link}>Entrar</Link>
         </div>
       </div>
     </div>
