@@ -1,0 +1,37 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.nupkg
+*.snupkg
+TestResults/
+
+# Secrets — nunca commitar
+appsettings.Development.json
+appsettings.Production.json
+*.pfx
+*.p12
+
+# EF Core migrations bundle
+efbundle
+
+# Rider / VS
+.idea/
+*.DotSettings.user
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/.env
+frontend/.env.local
+frontend/*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

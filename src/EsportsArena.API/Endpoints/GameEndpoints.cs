@@ -1,0 +1,52 @@
+using EsportsArena.API.Common;
+using EsportsArena.Application.Games.Commands.AddLicensedTeam;
+using EsportsArena.Application.Games.Commands.CreateGame;
+using EsportsArena.Application.Games.Queries.GetGames;
+using EsportsArena.Domain.Enums;
+using MediatR;
+
+namespace EsportsArena.API.Endpoints;
+
+public static class GameEndpoints
+{
+    public static void MapGameEndpoints(this IEndpointRouteBuilder app)
+    {
+        var group = app.MapGroup("/api/v1/games").WithTags("Games");
+        var adminGroup = app.MapGroup("/api/v1/admin/games").WithTags("Admin");
+
+        group.MapGet("/", async (IMediator mediator, CancellationToken ct) =>
+        {
+            var result = await mediator.Send(new GetGamesQuery(), ct);
+            return Results.Ok(ApiResponse<IReadOnlyList<GameDto>>.Ok(result.Value));
+        })
+        .WithName("GetGames")
+        .WithSummary("Lista todos os jogos ativos.");
+
+        adminGroup.MapPost("/", async (CreateGameRequest req, IMediator mediator, CancellationToken ct) =>
+        {
+            var command = new CreateGameCommand(req.Name, req.Slug, req.InscriptionMode, req.ScoreDisplay ?? "goals", req.IconUrl);
+            var result = await mediator.Send(command, ct);
+            return result.IsSuccess
+                ? Results.Created($"/api/v1/games/{result.Value}", ApiResponse<Guid>.Ok(result.Value))
+                : Results.BadRequest(ApiResponse<Guid>.Fail(result.Error));
+        })
+        .RequireAuthorization()
+        .WithName("CreateGame")
+        .WithSummary("Cria um novo jogo (admin).");
+
+        adminGroup.MapPost("/{gameId:guid}/teams", async (Guid gameId, AddTeamRequest req, IMediator mediator, CancellationToken ct) =>
+        {
+            var command = new AddLicensedTeamCommand(gameId, req.Name, req.Stars, req.LogoUrl);
+            var result = await mediator.Send(command, ct);
+            return result.IsSuccess
+                ? Results.Created($"/api/v1/admin/games/{gameId}/teams/{result.Value}", ApiResponse<Guid>.Ok(result.Value))
+                : Results.BadRequest(ApiResponse<Guid>.Fail(result.Error));
+        })
+        .RequireAuthorization()
+        .WithName("AddLicensedTeam")
+        .WithSummary("Adiciona um time licenciado a um jogo (admin).");
+    }
+}
+
+public record CreateGameRequest(string Name, string Slug, InscriptionMode InscriptionMode, string? ScoreDisplay, string? IconUrl);
+public record AddTeamRequest(string Name, byte Stars, string? LogoUrl);

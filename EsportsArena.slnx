@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/EsportsArena.API/EsportsArena.API.csproj" />
+    <Project Path="src/EsportsArena.Application/EsportsArena.Application.csproj" />
+    <Project Path="src/EsportsArena.Domain/EsportsArena.Domain.csproj" />
+    <Project Path="src/EsportsArena.Infrastructure/EsportsArena.Infrastructure.csproj" />
+  </Folder>
+</Solution>
