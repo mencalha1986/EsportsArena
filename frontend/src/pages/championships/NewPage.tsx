@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useApi } from '../../hooks/useApi';
 
 interface Game {
@@ -9,6 +9,55 @@ interface Game {
   scoreDisplay: string;
 }
 
+const selectStyle: React.CSSProperties = {
+  width: '100%',
+  background: 'rgba(255,255,255,0.04)',
+  border: '1px solid var(--border)',
+  borderRadius: 'var(--radius)',
+  color: 'var(--text)',
+  fontFamily: 'var(--font)',
+  fontSize: 15,
+  padding: '12px 16px',
+  outline: 'none',
+  cursor: 'pointer',
+  appearance: 'none',
+  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237070a0' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+  backgroundRepeat: 'no-repeat',
+  backgroundPosition: 'right 14px center',
+  paddingRight: 36,
+  transition: 'border-color 0.18s, box-shadow 0.18s',
+};
+
+const textareaStyle: React.CSSProperties = {
+  width: '100%',
+  background: 'rgba(255,255,255,0.04)',
+  border: '1px solid var(--border)',
+  borderRadius: 'var(--radius)',
+  color: 'var(--text)',
+  fontFamily: 'var(--font)',
+  fontSize: 15,
+  padding: '12px 16px',
+  outline: 'none',
+  resize: 'vertical',
+  minHeight: 96,
+  transition: 'border-color 0.18s, box-shadow 0.18s',
+};
+
+const starBtn = (active: boolean): React.CSSProperties => ({
+  width: 38,
+  height: 38,
+  borderRadius: 8,
+  border: `1px solid ${active ? 'var(--warning)' : 'var(--border)'}`,
+  background: active ? 'rgba(251,191,36,0.12)' : 'rgba(255,255,255,0.03)',
+  color: active ? 'var(--warning)' : 'var(--text-dim)',
+  fontSize: 18,
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  transition: 'all 0.15s',
+});
+
 export default function NewChampionshipPage() {
   const api = useApi();
   const navigate = useNavigate();
@@ -17,9 +66,10 @@ export default function NewChampionshipPage() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [format, setFormat] = useState('SingleRound');
-  const [minStars, setMinStars] = useState('');
-  const [maxStars, setMaxStars] = useState('');
+  const [minStars, setMinStars] = useState(0);
+  const [maxStars, setMaxStars] = useState(0);
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const selectedGame = games.find(g => g.id === gameId);
   const isLicensedTeams = selectedGame?.inscriptionMode === 'LicensedTeams';
@@ -31,56 +81,171 @@ export default function NewChampionshipPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+    setSubmitting(true);
     try {
       const payload: Record<string, unknown> = { gameId, name, description, format };
       if (isLicensedTeams) {
-        if (minStars) payload.minStars = Number(minStars);
-        if (maxStars) payload.maxStars = Number(maxStars);
+        if (minStars > 0) payload.minStars = minStars;
+        if (maxStars > 0) payload.maxStars = maxStars;
       }
       const { data } = await api.post('/api/v1/championships', payload);
       navigate(`/championships/${data.data}`);
     } catch (err: any) {
       setError(err.response?.data?.error ?? 'Erro ao criar campeonato.');
+      setSubmitting(false);
     }
   }
 
   return (
-    <div style={{ maxWidth: 500, margin: '40px auto', padding: 24 }}>
-      <h1>Criar campeonato</h1>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Jogo</label>
-          <select value={gameId} onChange={e => setGameId(e.target.value)} required>
-            <option value="">Selecione...</option>
-            {games.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-          </select>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', padding: '48px 24px' }}>
+      <div style={{ maxWidth: 560, margin: '0 auto' }}>
+
+        {/* Header */}
+        <div style={{ marginBottom: 36 }}>
+          <Link to="/championships" style={{ color: 'var(--text-muted)', fontSize: 13, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 20 }}>
+            ← Voltar para campeonatos
+          </Link>
+          <h2 style={{ color: '#fff', fontSize: 26, fontWeight: 800, letterSpacing: -0.5, marginBottom: 6 }}>
+            Criar campeonato
+          </h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>
+            Configure os detalhes do seu novo campeonato.
+          </p>
         </div>
-        <div>
-          <label>Nome do campeonato</label>
-          <input value={name} onChange={e => setName(e.target.value)} required maxLength={150} />
+
+        {/* Card */}
+        <div className="card" style={{ padding: '32px 36px' }}>
+          {error && (
+            <div className="alert alert-error fade-in" style={{ marginBottom: 24 }}>
+              <span>⚠</span><span>{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+
+            {/* Jogo */}
+            <div className="field">
+              <label className="field-label">Jogo</label>
+              <select
+                style={selectStyle}
+                value={gameId}
+                onChange={e => setGameId(e.target.value)}
+                required
+                onFocus={e => { e.target.style.borderColor = 'var(--accent)'; e.target.style.boxShadow = '0 0 0 3px var(--accent-glow)'; }}
+                onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
+              >
+                <option value="" style={{ background: '#0f0f1e' }}>Selecione um jogo...</option>
+                {games.map(g => (
+                  <option key={g.id} value={g.id} style={{ background: '#0f0f1e' }}>{g.name}</option>
+                ))}
+              </select>
+              {games.length === 0 && (
+                <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>Carregando jogos...</span>
+              )}
+            </div>
+
+            {/* Nome */}
+            <div className="field">
+              <label className="field-label">Nome do campeonato</label>
+              <input
+                className="input-field"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="Ex: Liga de Verão 2026"
+                required
+                maxLength={150}
+              />
+            </div>
+
+            {/* Descrição */}
+            <div className="field">
+              <label className="field-label">
+                Descrição
+                <span style={{ marginLeft: 6, color: 'var(--text-dim)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>
+                  — opcional
+                </span>
+              </label>
+              <textarea
+                style={textareaStyle}
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                placeholder="Descreva as regras, premiações ou qualquer informação relevante..."
+                maxLength={500}
+                onFocus={e => { e.target.style.borderColor = 'var(--accent)'; e.target.style.boxShadow = '0 0 0 3px var(--accent-glow)'; }}
+                onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
+              />
+            </div>
+
+            {/* Formato */}
+            <div className="field">
+              <label className="field-label">Formato</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                {[
+                  { value: 'SingleRound', label: '→ Somente ida', sub: 'Turno único' },
+                  { value: 'DoubleRound', label: '↔ Ida e volta', sub: 'Turno e returno' },
+                ].map(opt => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setFormat(opt.value)}
+                    style={{
+                      background: format === opt.value ? 'var(--accent-glow)' : 'rgba(255,255,255,0.03)',
+                      border: `1px solid ${format === opt.value ? 'var(--accent)' : 'var(--border)'}`,
+                      borderRadius: 'var(--radius)',
+                      color: format === opt.value ? 'var(--accent)' : 'var(--text-muted)',
+                      padding: '14px 16px',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 2 }}>{opt.label}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>{opt.sub}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Filtro de estrelas */}
+            {isLicensedTeams && (
+              <div className="field">
+                <label className="field-label">Filtro de estrelas <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, color: 'var(--text-dim)' }}>— opcional</span></label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {[
+                    { label: 'Mínimo', value: minStars, set: setMinStars },
+                    { label: 'Máximo', value: maxStars, set: setMaxStars },
+                  ].map(row => (
+                    <div key={row.label}>
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6 }}>{row.label}</div>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button type="button" style={starBtn(row.value === 0)} onClick={() => row.set(0)}>–</button>
+                        {[1, 2, 3, 4, 5].map(n => (
+                          <button key={n} type="button" style={starBtn(row.value === n)} onClick={() => row.set(n)}>
+                            {'★'}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Divider */}
+            <div className="divider" style={{ margin: '4px 0' }} />
+
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+              <Link to="/championships" className="btn btn-outline">
+                Cancelar
+              </Link>
+              <button type="submit" className="btn btn-primary" disabled={submitting || !gameId}>
+                {submitting ? 'Criando...' : 'Criar campeonato'}
+              </button>
+            </div>
+          </form>
         </div>
-        <div>
-          <label>Descrição (opcional)</label>
-          <textarea value={description} onChange={e => setDescription(e.target.value)} maxLength={500} />
-        </div>
-        <div>
-          <label>Formato</label>
-          <select value={format} onChange={e => setFormat(e.target.value)}>
-            <option value="SingleRound">Somente ida (turno único)</option>
-            <option value="DoubleRound">Ida e volta (turno e returno)</option>
-          </select>
-        </div>
-        {isLicensedTeams && (
-          <div>
-            <label>Filtro de estrelas (opcional)</label>
-            <input type="number" min={1} max={5} placeholder="Mín" value={minStars} onChange={e => setMinStars(e.target.value)} style={{ width: 60 }} />
-            {' a '}
-            <input type="number" min={1} max={5} placeholder="Máx" value={maxStars} onChange={e => setMaxStars(e.target.value)} style={{ width: 60 }} />
-          </div>
-        )}
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        <button type="submit">Criar</button>
-      </form>
+      </div>
     </div>
   );
 }
