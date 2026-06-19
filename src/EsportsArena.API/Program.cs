@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json.Serialization;
 using EsportsArena.API.Common;
 using EsportsArena.API.Endpoints;
 using Microsoft.AspNetCore.Authorization;
@@ -12,6 +13,11 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 
 var port = Environment.GetEnvironmentVariable("PORT");
 if (port != null)
