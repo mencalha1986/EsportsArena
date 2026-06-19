@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { supabase } from '../../lib/supabaseClient';
 import { useNavigate, Link, Navigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth, saveToken } from '../../hooks/useAuth';
+import axios from 'axios';
+
+const API = import.meta.env.VITE_API_URL ?? 'http://localhost:5000';
 
 const styles: Record<string, React.CSSProperties> = {
   page: {
@@ -64,7 +66,6 @@ const styles: Record<string, React.CSSProperties> = {
     outline: 'none',
     width: '100%',
     boxSizing: 'border-box',
-    transition: 'border-color 0.2s',
   },
   button: {
     marginTop: 8,
@@ -78,7 +79,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 700,
     cursor: 'pointer',
     letterSpacing: 0.5,
-    transition: 'background 0.2s',
   },
   error: {
     background: 'rgba(255, 60, 60, 0.1)',
@@ -116,9 +116,14 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     setSubmitting(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) { setError(error.message); setSubmitting(false); return; }
-    navigate('/championships');
+    try {
+      const { data } = await axios.post(`${API}/api/auth/login`, { email, password });
+      saveToken(data.data.accessToken);
+      navigate('/championships');
+    } catch (err: any) {
+      setError(err.response?.data?.error ?? 'E-mail ou senha inválidos.');
+      setSubmitting(false);
+    }
   }
 
   return (

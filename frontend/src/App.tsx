@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
-import { useAuth } from './hooks/useAuth';
+import { useAuth, clearToken } from './hooks/useAuth';
 import { useUserRole } from './hooks/useUserRole';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
@@ -12,7 +12,6 @@ import DraftPage from './pages/draft/DraftPage';
 import AdminPage from './pages/admin/AdminPage';
 import OrganizerPage from './pages/organizer/OrganizerPage';
 import ProtectedRoute from './components/ProtectedRoute';
-import { supabase } from './lib/supabaseClient';
 
 function NavBar() {
   const { session } = useAuth();
@@ -30,7 +29,7 @@ function NavBar() {
           {role === 'SuperAdmin' && (
             <Link to="/admin" style={{ color: '#f0a', textDecoration: 'none' }}>Admin</Link>
           )}
-          <button onClick={() => supabase.auth.signOut()} style={{ background: 'transparent', color: '#ccc', border: '1px solid #555', cursor: 'pointer', padding: '4px 12px', borderRadius: 4 }}>
+          <button onClick={clearToken} style={{ background: 'transparent', color: '#ccc', border: '1px solid #555', cursor: 'pointer', padding: '4px 12px', borderRadius: 4 }}>
             Sair
           </button>
         </>

@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabaseClient';
 import axios from 'axios';
 import { useNavigate, Link, Navigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth, saveToken } from '../../hooks/useAuth';
 
 const API = import.meta.env.VITE_API_URL ?? 'http://localhost:5000';
 
@@ -165,23 +164,17 @@ export default function RegisterPage() {
     }
 
     setSubmitting(true);
-
-    const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
-    if (authError) { setError(authError.message); setSubmitting(false); return; }
-    if (!authData.session) {
-      setError('Verifique seu e-mail para confirmar o cadastro antes de continuar.');
-      setSubmitting(false);
-      return;
-    }
-
     try {
-      await axios.post(`${API}/api/v1/users/register`,
-        { platformId, displayName },
-        { headers: { Authorization: `Bearer ${authData.session.access_token}` } }
-      );
+      const { data } = await axios.post(`${API}/api/auth/register`, {
+        email,
+        password,
+        platformId,
+        displayName,
+      });
+      saveToken(data.data.accessToken);
       navigate('/championships');
     } catch (err: any) {
-      setError(err.response?.data?.error ?? 'Erro ao criar perfil.');
+      setError(err.response?.data?.error ?? 'Erro ao criar conta.');
       setSubmitting(false);
     }
   }

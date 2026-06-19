@@ -1,4 +1,5 @@
 using System.Data;
+using EsportsArena.Application.Common;
 using EsportsArena.Domain.Interfaces;
 using EsportsArena.Infrastructure.Persistence;
 using EsportsArena.Infrastructure.Repositories;
@@ -32,6 +33,8 @@ public static class DependencyInjection
         services.AddScoped<IDraftEventRepository, DraftEventRepository>();
 
         services.AddSingleton<ILeagueEngineService, LeagueEngineService>();
+        services.AddScoped<ITokenService, JwtTokenService>();
+        services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
 
         return services;
     }

@@ -9,6 +9,9 @@ public sealed class UserRepository : BaseRepository<User>, IUserRepository
 {
     public UserRepository(AppDbContext context) : base(context) { }
 
+    public async Task<User?> GetByEmailAsync(string email, CancellationToken ct = default)
+        => await Context.Users.FirstOrDefaultAsync(u => u.Email == email.ToLowerInvariant(), ct);
+
     public async Task<User?> GetBySupabaseUidAsync(string supabaseUid, CancellationToken ct = default)
         => await Context.Users.FirstOrDefaultAsync(u => u.SupabaseUid == supabaseUid, ct);
 
@@ -17,6 +20,9 @@ public sealed class UserRepository : BaseRepository<User>, IUserRepository
 
     public async Task<bool> PlatformIdExistsAsync(string platformId, CancellationToken ct = default)
         => await Context.Users.AnyAsync(u => u.PlatformId == platformId.ToLowerInvariant(), ct);
+
+    public async Task<bool> EmailExistsAsync(string email, CancellationToken ct = default)
+        => await Context.Users.AnyAsync(u => u.Email == email.ToLowerInvariant(), ct);
 
     public async Task<List<string>> SuggestAvailableIdsAsync(string basePlatformId, int count = 3, CancellationToken ct = default)
     {

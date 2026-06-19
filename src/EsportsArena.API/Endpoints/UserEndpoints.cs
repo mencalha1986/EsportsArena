@@ -1,5 +1,4 @@
 using EsportsArena.API.Common;
-using EsportsArena.Application.Users.Commands.RegisterUser;
 using EsportsArena.Application.Users.Queries.CheckPlatformIdAvailability;
 using EsportsArena.Application.Users.Queries.GetUserProfile;
 using EsportsArena.Domain.Interfaces;
@@ -14,22 +13,6 @@ public static class UserEndpoints
     {
         var group = app.MapGroup("/api/v1/users").WithTags("Users");
 
-        group.MapPost("/register", async (RegisterUserRequest req, IMediator mediator, HttpContext ctx, CancellationToken ct) =>
-        {
-            var supabaseUid = ctx.User.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? ctx.User.FindFirstValue("sub");
-            if (supabaseUid is null) return Results.Unauthorized();
-
-            var command = new RegisterUserCommand(supabaseUid, req.PlatformId, req.DisplayName);
-            var result = await mediator.Send(command, ct);
-            return result.IsSuccess
-                ? Results.Created($"/api/v1/users/{req.PlatformId}", ApiResponse<Guid>.Ok(result.Value))
-                : Results.BadRequest(ApiResponse<Guid>.Fail(result.Error));
-        })
-        .RequireAuthorization()
-        .WithName("RegisterUser")
-        .WithSummary("Registra o perfil do usuário após autenticação Supabase.");
-
         group.MapGet("/platform-id/check", async (string value, IMediator mediator, CancellationToken ct) =>
         {
             var result = await mediator.Send(new CheckPlatformIdAvailabilityQuery(value), ct);
@@ -40,13 +23,14 @@ public static class UserEndpoints
         .WithName("CheckPlatformId")
         .WithSummary("Verifica disponibilidade do ID e retorna 3 sugestões se ocupado.");
 
-        group.MapGet("/me", async (IMediator mediator, IUserRepository users, HttpContext ctx, CancellationToken ct) =>
+        group.MapGet("/me", async (IUserRepository users, IMediator mediator, HttpContext ctx, CancellationToken ct) =>
         {
-            var supabaseUid = ctx.User.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? ctx.User.FindFirstValue("sub");
-            if (supabaseUid is null) return Results.Unauthorized();
+            var sub = ctx.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                   ?? ctx.User.FindFirstValue("sub");
+            if (sub is null || !Guid.TryParse(sub, out var userId))
+                return Results.Unauthorized();
 
-            var user = await users.GetBySupabaseUidAsync(supabaseUid, ct);
+            var user = await users.GetByIdAsync(userId, ct);
             if (user is null) return Results.NotFound(ApiResponse<object>.Fail("Perfil não encontrado."));
 
             var result = await mediator.Send(new GetUserProfileQuery(user.PlatformId), ct);
@@ -69,5 +53,3 @@ public static class UserEndpoints
         .WithSummary("Retorna o perfil público de um usuário.");
     }
 }
-
-public record RegisterUserRequest(string PlatformId, string DisplayName);

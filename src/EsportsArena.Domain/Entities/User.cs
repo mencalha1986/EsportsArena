@@ -5,7 +5,9 @@ namespace EsportsArena.Domain.Entities;
 
 public sealed class User : Entity
 {
-    public string SupabaseUid { get; private set; } = default!;
+    public string? SupabaseUid { get; private set; }
+    public string Email { get; private set; } = default!;
+    public string PasswordHash { get; private set; } = default!;
     public string PlatformId { get; private set; } = default!;
     public string DisplayName { get; private set; } = default!;
     public string? AvatarUrl { get; private set; }
@@ -15,10 +17,12 @@ public sealed class User : Entity
 
     private User() { }
 
-    public static Result<User> Create(string supabaseUid, string platformId, string displayName)
+    public static Result<User> Create(string email, string passwordHash, string platformId, string displayName)
     {
-        if (string.IsNullOrWhiteSpace(supabaseUid))
-            return Result<User>.Failure("SupabaseUid é obrigatório.");
+        if (string.IsNullOrWhiteSpace(email))
+            return Result<User>.Failure("E-mail é obrigatório.");
+        if (string.IsNullOrWhiteSpace(passwordHash))
+            return Result<User>.Failure("Senha é obrigatória.");
         if (string.IsNullOrWhiteSpace(platformId))
             return Result<User>.Failure("ID da plataforma é obrigatório.");
         if (platformId.Length < 3 || platformId.Length > 30)
@@ -30,7 +34,8 @@ public sealed class User : Entity
 
         return Result<User>.Success(new User
         {
-            SupabaseUid = supabaseUid,
+            Email = email.Trim().ToLowerInvariant(),
+            PasswordHash = passwordHash,
             PlatformId = platformId.ToLowerInvariant(),
             DisplayName = displayName.Trim()
         });

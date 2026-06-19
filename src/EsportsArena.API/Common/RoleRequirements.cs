@@ -16,11 +16,11 @@ public sealed class SuperAdminHandler : AuthorizationHandler<SuperAdminRequireme
     protected override async Task HandleRequirementAsync(
         AuthorizationHandlerContext context, SuperAdminRequirement requirement)
     {
-        var uid = context.User.FindFirstValue(ClaimTypes.NameIdentifier)
+        var sub = context.User.FindFirstValue(ClaimTypes.NameIdentifier)
                ?? context.User.FindFirstValue("sub");
-        if (uid is null) { context.Fail(); return; }
+        if (sub is null || !Guid.TryParse(sub, out var userId)) { context.Fail(); return; }
 
-        var user = await _users.GetBySupabaseUidAsync(uid);
+        var user = await _users.GetByIdAsync(userId);
         if (user?.Role == UserRole.SuperAdmin)
             context.Succeed(requirement);
         else
@@ -36,11 +36,11 @@ public sealed class AdminOrAboveHandler : AuthorizationHandler<AdminOrAboveRequi
     protected override async Task HandleRequirementAsync(
         AuthorizationHandlerContext context, AdminOrAboveRequirement requirement)
     {
-        var uid = context.User.FindFirstValue(ClaimTypes.NameIdentifier)
+        var sub = context.User.FindFirstValue(ClaimTypes.NameIdentifier)
                ?? context.User.FindFirstValue("sub");
-        if (uid is null) { context.Fail(); return; }
+        if (sub is null || !Guid.TryParse(sub, out var userId)) { context.Fail(); return; }
 
-        var user = await _users.GetBySupabaseUidAsync(uid);
+        var user = await _users.GetByIdAsync(userId);
 
         var allowed = user is not null && (
             user.Role == UserRole.SuperAdmin ||

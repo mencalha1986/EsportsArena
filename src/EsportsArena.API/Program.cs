@@ -1,3 +1,4 @@
+using System.Text;
 using EsportsArena.API.Common;
 using EsportsArena.API.Endpoints;
 using Microsoft.AspNetCore.Authorization;
@@ -7,6 +8,7 @@ using EsportsArena.Infrastructure.Hubs;
 using EsportsArena.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,20 +20,23 @@ if (port != null)
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
-// Supabase JWT validation via JWKS (RS256) - no custom token generation
-var supabaseUrl = builder.Configuration["Supabase:Url"]!;
+var jwtSecret = builder.Configuration["Jwt:Secret"]!;
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "esportsarena";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "esportsarena";
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(opts =>
     {
-        opts.Authority = $"{supabaseUrl}/auth/v1";
-        opts.Audience = "authenticated";
-        opts.TokenValidationParameters = new()
+        opts.TokenValidationParameters = new TokenValidationParameters
         {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
             ValidateIssuer = true,
-            ValidIssuer = $"{supabaseUrl}/auth/v1",
+            ValidIssuer = jwtIssuer,
             ValidateAudience = true,
-            ValidAudience = "authenticated",
-            ValidateLifetime = true
+            ValidAudience = jwtAudience,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero
         };
     });
 
@@ -67,7 +72,7 @@ builder.Services.AddSwaggerGen(c =>
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Cole o JWT do Supabase: Bearer {token}"
+        Description = "Informe o token: Bearer {token}"
     });
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
@@ -99,6 +104,7 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapAuthEndpoints();
 app.MapUserEndpoints();
 app.MapGameEndpoints();
 app.MapAdminManagementEndpoints();
