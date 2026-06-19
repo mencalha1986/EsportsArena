@@ -1,4 +1,5 @@
 using EsportsArena.Domain.Entities;
+using EsportsArena.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -13,6 +14,14 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.PlatformId).IsRequired().HasMaxLength(30);
         builder.Property(u => u.DisplayName).IsRequired().HasMaxLength(100);
         builder.Property(u => u.AvatarUrl).HasMaxLength(1000);
+        builder.Property(u => u.Role)
+            .IsRequired()
+            .HasDefaultValue(UserRole.Player)
+            .HasConversion<string>();
+        builder.Property(u => u.IsActive)
+            .IsRequired()
+            .HasDefaultValue(true);
+        builder.Property(u => u.SubscriptionNotes).HasMaxLength(500);
         builder.Property(u => u.CreatedAt).IsRequired();
         builder.Property(u => u.UpdatedAt).IsRequired();
         builder.HasIndex(u => u.SupabaseUid).IsUnique();

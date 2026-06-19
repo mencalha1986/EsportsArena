@@ -14,7 +14,9 @@ public record UserProfileDto(
     int Draws,
     int Losses,
     int Titles,
-    IReadOnlyList<RecentMatchDto> RecentMatches);
+    IReadOnlyList<RecentMatchDto> RecentMatches,
+    string Role,
+    bool IsActive);
 
 public record RecentMatchDto(
     string ChampionshipName,

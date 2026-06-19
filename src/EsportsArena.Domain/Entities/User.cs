@@ -1,4 +1,5 @@
 using EsportsArena.Domain.Common;
+using EsportsArena.Domain.Enums;
 
 namespace EsportsArena.Domain.Entities;
 
@@ -8,6 +9,9 @@ public sealed class User : Entity
     public string PlatformId { get; private set; } = default!;
     public string DisplayName { get; private set; } = default!;
     public string? AvatarUrl { get; private set; }
+    public UserRole Role { get; private set; } = UserRole.Player;
+    public bool IsActive { get; private set; } = true;
+    public string? SubscriptionNotes { get; private set; }
 
     private User() { }
 
@@ -30,6 +34,34 @@ public sealed class User : Entity
             PlatformId = platformId.ToLowerInvariant(),
             DisplayName = displayName.Trim()
         });
+    }
+
+    public void ActivateAsAdmin(string? notes = null)
+    {
+        Role = UserRole.Admin;
+        IsActive = true;
+        SubscriptionNotes = notes;
+        MarkUpdated();
+    }
+
+    public void Deactivate(string? reason = null)
+    {
+        IsActive = false;
+        SubscriptionNotes = reason;
+        MarkUpdated();
+    }
+
+    public void Reactivate(string? notes = null)
+    {
+        IsActive = true;
+        SubscriptionNotes = notes;
+        MarkUpdated();
+    }
+
+    public void PromoteToSuperAdmin()
+    {
+        Role = UserRole.SuperAdmin;
+        MarkUpdated();
     }
 
     public Result UpdateProfile(string displayName, string? avatarUrl)

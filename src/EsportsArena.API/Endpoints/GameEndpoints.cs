@@ -12,7 +12,8 @@ public static class GameEndpoints
     public static void MapGameEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/v1/games").WithTags("Games");
-        var adminGroup = app.MapGroup("/api/v1/admin/games").WithTags("Admin");
+        var adminGroup = app.MapGroup("/api/v1/admin/games").WithTags("Admin")
+            .RequireAuthorization("SuperAdminOnly");
 
         group.MapGet("/", async (IMediator mediator, CancellationToken ct) =>
         {
@@ -30,7 +31,6 @@ public static class GameEndpoints
                 ? Results.Created($"/api/v1/games/{result.Value}", ApiResponse<Guid>.Ok(result.Value))
                 : Results.BadRequest(ApiResponse<Guid>.Fail(result.Error));
         })
-        .RequireAuthorization()
         .WithName("CreateGame")
         .WithSummary("Cria um novo jogo (admin).");
 
@@ -42,7 +42,6 @@ public static class GameEndpoints
                 ? Results.Created($"/api/v1/admin/games/{gameId}/teams/{result.Value}", ApiResponse<Guid>.Ok(result.Value))
                 : Results.BadRequest(ApiResponse<Guid>.Fail(result.Error));
         })
-        .RequireAuthorization()
         .WithName("AddLicensedTeam")
         .WithSummary("Adiciona um time licenciado a um jogo (admin).");
     }

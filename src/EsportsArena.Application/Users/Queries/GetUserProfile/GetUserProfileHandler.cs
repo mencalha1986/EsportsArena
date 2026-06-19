@@ -14,7 +14,7 @@ public sealed class GetUserProfileHandler : IRequestHandler<GetUserProfileQuery,
     public async Task<Result<UserProfileDto>> Handle(GetUserProfileQuery request, CancellationToken ct)
     {
         const string userSql = """
-            SELECT id, platform_id, display_name, avatar_url
+            SELECT id, platform_id, display_name, avatar_url, "Role" AS role, "IsActive" AS is_active
             FROM users WHERE LOWER(platform_id) = LOWER(@PlatformId)
             """;
 
@@ -109,7 +109,9 @@ public sealed class GetUserProfileHandler : IRequestHandler<GetUserProfileQuery,
             (int)(stats?.draws ?? 0),
             (int)(stats?.losses ?? 0),
             titles,
-            recent);
+            recent,
+            (string)user.role,
+            (bool)user.is_active);
 
         return Result<UserProfileDto>.Success(dto);
     }

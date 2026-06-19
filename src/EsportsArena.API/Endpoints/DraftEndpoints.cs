@@ -42,7 +42,7 @@ public static class DraftEndpoints
 
             return Results.Ok(ApiResponse<IReadOnlyList<DraftResultDto>>.Ok(result.Value));
         })
-        .RequireAuthorization()
+        .RequireAuthorization("AdminOrAbove")
         .WithName("RunLiveDraft")
         .WithSummary("Executa o sorteio de times (só organizador). Resultado transmitido via SignalR.");
 

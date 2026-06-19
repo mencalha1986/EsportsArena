@@ -277,3 +277,90 @@ BEGIN
 END $EF$;
 COMMIT;
 
+START TRANSACTION;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20260619134734_AddUserRoleAndSubscription') THEN
+    ALTER TABLE users
+        ADD COLUMN "IsActive"          boolean              NOT NULL DEFAULT true,
+        ADD COLUMN "Role"              text                 NOT NULL DEFAULT 'Player',
+        ADD COLUMN "SubscriptionNotes" character varying(500);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20260619134734_AddUserRoleAndSubscription') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20260619134734_AddUserRoleAndSubscription', '10.0.9');
+    END IF;
+END $EF$;
+
+-- ============================================================
+-- Seed SuperAdmin: mencalha1986@gmail.com
+-- ATENÇÃO: senha visível no repositório — troque após o primeiro login!
+-- ============================================================
+DO $$
+DECLARE
+  _uid uuid;
+BEGIN
+  -- 1. Criar conta no Supabase Auth (ignora se já existir)
+  IF NOT EXISTS (SELECT 1 FROM auth.users WHERE email = 'mencalha1986@gmail.com') THEN
+    _uid := gen_random_uuid();
+
+    INSERT INTO auth.users (
+      instance_id, id, aud, role, email, encrypted_password,
+      email_confirmed_at, created_at, updated_at,
+      raw_app_meta_data, raw_user_meta_data, is_super_admin
+    ) VALUES (
+      '00000000-0000-0000-0000-000000000000',
+      _uid,
+      'authenticated',
+      'authenticated',
+      'mencalha1986@gmail.com',
+      crypt('admin123@', gen_salt('bf')),
+      now(), now(), now(),
+      '{"provider":"email","providers":["email"]}',
+      '{}',
+      false
+    );
+
+    -- Identidade necessária para login por e-mail funcionar no Supabase
+    INSERT INTO auth.identities (
+      id, user_id, identity_data, provider, provider_id,
+      last_sign_in_at, created_at, updated_at
+    ) VALUES (
+      _uid,
+      _uid,
+      jsonb_build_object('sub', _uid::text, 'email', 'mencalha1986@gmail.com'),
+      'email',
+      'mencalha1986@gmail.com',
+      now(), now(), now()
+    );
+  END IF;
+
+  -- 2. Obter o UID gerado pelo Supabase Auth
+  SELECT id INTO _uid FROM auth.users WHERE email = 'mencalha1986@gmail.com';
+
+  -- 3. Criar perfil na tabela users com role SuperAdmin (upsert)
+  INSERT INTO users (
+    "Id", "SupabaseUid", "PlatformId", "DisplayName",
+    "Role", "IsActive", "CreatedAt", "UpdatedAt"
+  ) VALUES (
+    gen_random_uuid(),
+    _uid::text,
+    'mencalha',
+    'CEO',
+    'SuperAdmin',
+    true,
+    now(), now()
+  )
+  ON CONFLICT ("SupabaseUid") DO UPDATE
+    SET "Role" = 'SuperAdmin',
+        "IsActive" = true,
+        "UpdatedAt" = now();
+END $$;
+
+COMMIT;
+

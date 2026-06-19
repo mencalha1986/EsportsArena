@@ -50,7 +50,7 @@ public static class ChampionshipEndpoints
                 ? Results.Created($"/api/v1/championships/{result.Value}", ApiResponse<Guid>.Ok(result.Value))
                 : Results.BadRequest(ApiResponse<Guid>.Fail(result.Error));
         })
-        .RequireAuthorization()
+        .RequireAuthorization("AdminOrAbove")
         .WithName("CreateChampionship")
         .WithSummary("Cria um novo campeonato.");
 
@@ -63,7 +63,7 @@ public static class ChampionshipEndpoints
             var result = await mediator.Send(new OpenEnrollmentsCommand(id, requesterId), ct);
             return result.IsSuccess ? Results.NoContent() : Results.BadRequest(ApiResponse<object>.Fail(result.Error));
         })
-        .RequireAuthorization()
+        .RequireAuthorization("AdminOrAbove")
         .WithName("OpenEnrollments")
         .WithSummary("Abre as inscrições do campeonato.");
 
@@ -76,7 +76,7 @@ public static class ChampionshipEndpoints
             var result = await mediator.Send(new StartChampionshipCommand(id, requesterId), ct);
             return result.IsSuccess ? Results.NoContent() : Results.BadRequest(ApiResponse<object>.Fail(result.Error));
         })
-        .RequireAuthorization()
+        .RequireAuthorization("AdminOrAbove")
         .WithName("StartChampionship")
         .WithSummary("Inicia o campeonato e gera as rodadas automaticamente.");
 
