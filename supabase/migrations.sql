@@ -205,21 +205,29 @@ END $EF$;
 -- Hash BCrypt (workFactor=12) gerado pela aplicação .NET.
 -- ATENÇÃO: troque a senha após o primeiro login!
 -- ============================================================
-INSERT INTO users (
-    "Id", "Email", "PasswordHash", "PlatformId", "DisplayName",
-    "Role", "IsActive", "CreatedAt", "UpdatedAt"
-)
-VALUES (
-    gen_random_uuid(),
-    'mencalha1986@gmail.com',
-    '$2a$12$1ClnfwmOrXyb.B/C32v9aOO9Zi2lPOYpsfq/bpPTfTkK632mJ0ZJC',
-    'mencalha',
-    'CEO',
-    'SuperAdmin',
-    true,
-    now(), now()
-)
-ON CONFLICT ("Email") DO UPDATE
-    SET "Role"      = 'SuperAdmin',
-        "IsActive"  = true,
-        "UpdatedAt" = now();
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM users WHERE "Email" = 'mencalha1986@gmail.com' OR "PlatformId" = 'mencalha') THEN
+    UPDATE users
+       SET "Email"        = 'mencalha1986@gmail.com',
+           "PasswordHash" = '$2a$12$1ClnfwmOrXyb.B/C32v9aOO9Zi2lPOYpsfq/bpPTfTkK632mJ0ZJC',
+           "Role"         = 'SuperAdmin',
+           "IsActive"     = true,
+           "UpdatedAt"    = now()
+     WHERE "Email" = 'mencalha1986@gmail.com' OR "PlatformId" = 'mencalha';
+  ELSE
+    INSERT INTO users (
+        "Id", "Email", "PasswordHash", "PlatformId", "DisplayName",
+        "Role", "IsActive", "CreatedAt", "UpdatedAt"
+    ) VALUES (
+        gen_random_uuid(),
+        'mencalha1986@gmail.com',
+        '$2a$12$1ClnfwmOrXyb.B/C32v9aOO9Zi2lPOYpsfq/bpPTfTkK632mJ0ZJC',
+        'mencalha',
+        'CEO',
+        'SuperAdmin',
+        true,
+        now(), now()
+    );
+  END IF;
+END $$;
