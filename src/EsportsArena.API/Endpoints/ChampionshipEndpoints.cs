@@ -18,9 +18,9 @@ public static class ChampionshipEndpoints
     {
         var group = app.MapGroup("/api/v1/championships").WithTags("Championships");
 
-        group.MapGet("/", async (Guid? gameId, string? status, IChampionshipRepository championships, CancellationToken ct) =>
+        group.MapGet("/", async (Guid? gameId, string? status, Guid? organizerId, IChampionshipRepository championships, CancellationToken ct) =>
         {
-            var list = await championships.GetByFiltersAsync(gameId, status, ct);
+            var list = await championships.GetByFiltersAsync(gameId, status, organizerId, ct);
             var dtos = list.Select(c => new { c.Id, c.Name, c.Status, c.Format, c.GameId, c.OrganizerId, c.CreatedAt });
             return Results.Ok(ApiResponse<object>.Ok(dtos));
         })

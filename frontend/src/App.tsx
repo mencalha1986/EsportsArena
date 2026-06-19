@@ -15,18 +15,32 @@ import OrganizerPage from './pages/organizer/OrganizerPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import LandingPage from './pages/landing/LandingPage';
 
-function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
+interface SidebarLinkProps { to: string; icon: string; label: string; }
+
+function SidebarLink({ to, icon, label }: SidebarLinkProps) {
   const { pathname } = useLocation();
   const active = pathname === to || pathname.startsWith(to + '/');
   return (
-    <Link to={to} className={`nav-link${active ? ' active' : ''}`}>
-      {children}
+    <Link
+      to={to}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '9px 14px', borderRadius: 'var(--radius)',
+        color: active ? 'var(--accent)' : 'var(--text-muted)',
+        background: active ? 'var(--accent-glow)' : 'transparent',
+        fontWeight: active ? 600 : 400, fontSize: 14,
+        textDecoration: 'none',
+        transition: 'color 0.15s, background 0.15s',
+      }}
+    >
+      <span style={{ fontSize: 16, width: 20, textAlign: 'center' }}>{icon}</span>
+      <span>{label}</span>
     </Link>
   );
 }
 
-function NavBar() {
-  const { session, user } = useAuth();
+function Sidebar() {
+  const { user } = useAuth();
   const { role, isActive } = useUserRole();
   const navigate = useNavigate();
 
@@ -38,66 +52,87 @@ function NavBar() {
   const initials = user?.platformId?.slice(0, 2).toUpperCase() ?? '??';
 
   return (
-    <nav style={{
-      position: 'sticky', top: 0, zIndex: 100,
-      padding: '0 28px',
-      height: 56,
-      background: 'rgba(8,8,15,0.85)',
-      backdropFilter: 'blur(12px)',
-      WebkitBackdropFilter: 'blur(12px)',
-      borderBottom: '1px solid rgba(255,255,255,0.05)',
-      display: 'flex',
-      alignItems: 'center',
-      gap: 8,
+    <aside style={{
+      position: 'fixed', top: 0, left: 0, bottom: 0,
+      width: 220, zIndex: 100,
+      background: 'var(--surface)',
+      borderRight: '1px solid var(--border)',
+      display: 'flex', flexDirection: 'column',
     }}>
       {/* Logo */}
-      <Link
-        to={session ? '/championships' : '/'}
-        style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none', marginRight: 24 }}
-      >
-        <span style={{ fontSize: 18 }}>⚔️</span>
-        <span style={{ color: 'var(--accent)', fontWeight: 800, fontSize: 17, letterSpacing: -0.3 }}>
-          EsportsArena
-        </span>
-      </Link>
+      <div style={{ padding: '20px 20px 16px' }}>
+        <Link
+          to="/championships"
+          style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}
+        >
+          <span style={{ fontSize: 20 }}>⚔️</span>
+          <span style={{ color: 'var(--accent)', fontWeight: 800, fontSize: 16, letterSpacing: -0.3 }}>
+            EsportsArena
+          </span>
+        </Link>
+      </div>
 
-      {/* Nav links */}
-      {session && (
-        <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-          <NavLink to="/championships">Campeonatos</NavLink>
-          {((role === 'Admin' && isActive) || role === 'SuperAdmin') && (
-            <NavLink to="/organizer">Organizar</NavLink>
-          )}
-          {role === 'SuperAdmin' && (
-            <NavLink to="/admin/dashboard">Dashboard</NavLink>
-          )}
-          {role === 'SuperAdmin' && (
-            <NavLink to="/admin">Usuários</NavLink>
-          )}
-        </div>
-      )}
+      <div style={{ height: 1, background: 'var(--border)', margin: '0 16px' }} />
 
-      <div style={{ flex: 1 }} />
+      {/* Nav */}
+      <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, padding: '12px 8px' }}>
+        <SidebarLink to="/championships" icon="🏆" label="Campeonatos" />
+        {((role === 'Admin' && isActive) || role === 'SuperAdmin') && (
+          <SidebarLink to="/organizer" icon="🎯" label="Organizar" />
+        )}
+        {role === 'SuperAdmin' && (
+          <SidebarLink to="/admin/dashboard" icon="📊" label="Dashboard" />
+        )}
+        {role === 'SuperAdmin' && (
+          <SidebarLink to="/admin" icon="👥" label="Clientes" />
+        )}
+      </nav>
 
-      {/* Right side */}
-      {session ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div className="avatar" title={`@${user?.platformId}`}>{initials}</div>
-          <button
-            onClick={handleLogout}
-            className="btn btn-outline btn-sm"
-            style={{ fontSize: 13 }}
-          >
-            Sair
-          </button>
+      {/* User footer */}
+      <div style={{ borderTop: '1px solid var(--border)', padding: '14px 12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+          <div className="avatar" style={{ width: 30, height: 30, fontSize: 11 }}>{initials}</div>
+          <div style={{ overflow: 'hidden' }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {user?.platformId}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'capitalize' }}>{role}</div>
+          </div>
         </div>
-      ) : (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Link to="/login" className="btn btn-ghost btn-sm">Entrar</Link>
-          <Link to="/register" className="btn btn-primary btn-sm">Cadastrar</Link>
-        </div>
-      )}
-    </nav>
+        <button onClick={handleLogout} className="btn btn-outline btn-sm btn-full">
+          Sair
+        </button>
+      </div>
+    </aside>
+  );
+}
+
+function Layout() {
+  const { session } = useAuth();
+  return (
+    <div style={{ display: 'flex', minHeight: '100vh' }}>
+      {session && <Sidebar />}
+      <main style={{ flex: 1, marginLeft: session ? 220 : 0 }}>
+        <Routes>
+          {/* Rotas públicas */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/championships" element={<ChampionshipsListPage />} />
+          <Route path="/championships/:id" element={<ChampionshipDetailPage />} />
+
+          {/* Rotas protegidas */}
+          <Route path="/championships/new" element={<ProtectedRoute><NewChampionshipPage /></ProtectedRoute>} />
+          <Route path="/championships/:id/league" element={<ProtectedRoute><LeaguePage /></ProtectedRoute>} />
+          <Route path="/championships/:id/draft" element={<ProtectedRoute><DraftPage /></ProtectedRoute>} />
+          <Route path="/profile/:platformId" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+          <Route path="/organizer" element={<ProtectedRoute><OrganizerPage /></ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
+          <Route path="/admin/dashboard" element={<ProtectedRoute><SuperAdminDashboard /></ProtectedRoute>} />
+
+          <Route path="/" element={<HomeRoute />} />
+        </Routes>
+      </main>
+    </div>
   );
 }
 
@@ -112,25 +147,7 @@ function HomeRoute() {
 function App() {
   return (
     <BrowserRouter>
-      <NavBar />
-      <Routes>
-        {/* Rotas públicas */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/championships" element={<ChampionshipsListPage />} />
-        <Route path="/championships/:id" element={<ChampionshipDetailPage />} />
-
-        {/* Rotas protegidas */}
-        <Route path="/championships/new" element={<ProtectedRoute><NewChampionshipPage /></ProtectedRoute>} />
-        <Route path="/championships/:id/league" element={<ProtectedRoute><LeaguePage /></ProtectedRoute>} />
-        <Route path="/championships/:id/draft" element={<ProtectedRoute><DraftPage /></ProtectedRoute>} />
-        <Route path="/profile/:platformId" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-        <Route path="/organizer" element={<ProtectedRoute><OrganizerPage /></ProtectedRoute>} />
-        <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
-        <Route path="/admin/dashboard" element={<ProtectedRoute><SuperAdminDashboard /></ProtectedRoute>} />
-
-        <Route path="/" element={<HomeRoute />} />
-      </Routes>
+      <Layout />
     </BrowserRouter>
   );
 }

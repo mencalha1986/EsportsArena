@@ -9,11 +9,12 @@ public sealed class ChampionshipRepository : BaseRepository<Championship>, ICham
 {
     public ChampionshipRepository(AppDbContext context) : base(context) { }
 
-    public async Task<List<Championship>> GetByFiltersAsync(Guid? gameId, string? status, CancellationToken ct = default)
+    public async Task<List<Championship>> GetByFiltersAsync(Guid? gameId, string? status, Guid? organizerId = null, CancellationToken ct = default)
     {
         var query = Context.Championships.AsQueryable();
         if (gameId.HasValue) query = query.Where(c => c.GameId == gameId.Value);
         if (!string.IsNullOrWhiteSpace(status)) query = query.Where(c => c.Status.ToString() == status);
+        if (organizerId.HasValue) query = query.Where(c => c.OrganizerId == organizerId.Value);
         return await query.OrderByDescending(c => c.CreatedAt).ToListAsync(ct);
     }
 }

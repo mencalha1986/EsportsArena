@@ -314,44 +314,29 @@ a { color: inherit; }
 .fade-in  { animation: fadeIn 0.25s ease both; }
 .shake    { animation: shake 0.35s ease; }
 
-/* ── Auth split layout ─────────────────────────────────────── */
+/* ── Auth layout ───────────────────────────────────────────── */
 .auth-root {
   display: flex;
   min-height: 100vh;
-}
-
-.auth-brand {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  padding: 60px 56px;
-  background: linear-gradient(160deg, #08080f 0%, #0a1228 60%, #0d1a33 100%);
-  position: relative;
-  overflow: hidden;
-}
-
-.auth-brand::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse 70% 60% at 30% 40%, rgba(0,170,255,0.07) 0%, transparent 70%);
-  pointer-events: none;
+  background: var(--bg);
 }
 
 .auth-form-panel {
-  width: 480px;
+  width: 100%;
+  max-width: 460px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 60px 52px;
+  padding: 52px 48px;
   background: var(--surface);
-  border-left: 1px solid var(--border);
+  border: 1px solid var(--border);
+  border-radius: 16px;
 }
 
-@media (max-width: 860px) {
-  .auth-brand { display: none; }
-  .auth-form-panel { width: 100%; padding: 40px 28px; border-left: none; }
+@media (max-width: 560px) {
+  .auth-form-panel { padding: 40px 28px; border-radius: 0; border-left: none; border-right: none; }
 }
 
 /* ── Misc utils ────────────────────────────────────────────── */

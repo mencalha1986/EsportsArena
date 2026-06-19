@@ -1,4 +1,5 @@
 using EsportsArena.API.Common;
+using EsportsArena.Application.Admin.Commands.CreateClient;
 using EsportsArena.Application.Admin.Queries.GetAdminStats;
 using EsportsArena.Application.Users.Commands.ManageClientRole;
 using EsportsArena.Application.Users.Queries.ListUsers;
@@ -13,6 +14,16 @@ public static class AdminManagementEndpoints
         var group = app.MapGroup("/api/v1/admin/users")
             .WithTags("Admin")
             .RequireAuthorization("SuperAdminOnly");
+
+        group.MapPost("/", async (CreateClientRequest req, IMediator mediator, CancellationToken ct) =>
+        {
+            var result = await mediator.Send(new CreateClientCommand(req.Email, req.Password, req.PlatformId, req.DisplayName, req.Notes), ct);
+            return result.IsSuccess
+                ? Results.Created($"/api/v1/admin/users/{result.Value.Id}", ApiResponse<UserSummaryDto>.Ok(result.Value))
+                : Results.BadRequest(ApiResponse<object>.Fail(result.Error));
+        })
+        .WithName("CreateClient")
+        .WithSummary("Cria um novo cliente (Admin) diretamente pelo SuperAdmin.");
 
         group.MapGet("/stats", async (IMediator mediator, CancellationToken ct) =>
         {
@@ -58,3 +69,4 @@ public static class AdminManagementEndpoints
 
 public record ActivateRequest(string? Notes = null);
 public record ReasonRequest(string? Reason = null);
+public record CreateClientRequest(string Email, string Password, string PlatformId, string DisplayName, string? Notes = null);
