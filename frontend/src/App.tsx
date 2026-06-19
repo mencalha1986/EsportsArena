@@ -12,6 +12,7 @@ import DraftPage from './pages/draft/DraftPage';
 import AdminPage from './pages/admin/AdminPage';
 import SuperAdminDashboard from './pages/admin/SuperAdminDashboard';
 import OrganizerPage from './pages/organizer/OrganizerPage';
+import GamesPage from './pages/admin/GamesPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import LandingPage from './pages/landing/LandingPage';
 
@@ -86,6 +87,9 @@ function Sidebar() {
         {role === 'SuperAdmin' && (
           <SidebarLink to="/admin" icon="👥" label="Clientes" />
         )}
+        {role === 'SuperAdmin' && (
+          <SidebarLink to="/admin/games" icon="🎮" label="Jogos" />
+        )}
       </nav>
 
       {/* User footer */}
@@ -128,6 +132,7 @@ function Layout() {
           <Route path="/organizer" element={<ProtectedRoute><OrganizerPage /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
           <Route path="/admin/dashboard" element={<ProtectedRoute><SuperAdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin/games" element={<ProtectedRoute><GamesPage /></ProtectedRoute>} />
 
           <Route path="/" element={<HomeRoute />} />
         </Routes>
