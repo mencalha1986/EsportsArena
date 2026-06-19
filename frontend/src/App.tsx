@@ -65,7 +65,7 @@ function Sidebar() {
           to="/championships"
           style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}
         >
-          <img src="/favicon.svg" alt="EsportsArena" style={{ width: 28, height: 28 }} />
+          <span style={{ fontSize: 22, lineHeight: 1 }}>⚔️</span>
           <span style={{ color: 'var(--text)', fontWeight: 800, fontSize: 16, letterSpacing: -0.3 }}>
             Esports<span style={{ color: '#863bff' }}>Arena</span>
           </span>
