@@ -14,11 +14,12 @@ public static class DraftEndpoints
     {
         var group = app.MapGroup("/api/v1/championships/{championshipId:guid}/draft").WithTags("Draft");
 
-        group.MapPost("/", async (Guid championshipId, IMediator mediator, IUserRepository users,
+        group.MapPost("/", async (Guid championshipId, IMediator mediator,
             IHubContext<DraftHub> hub, HttpContext ctx, CancellationToken ct) =>
         {
-            var requesterId = await GetUserIdAsync(ctx, users, ct);
-            if (requesterId == Guid.Empty) return Results.Unauthorized();
+            var sub = ctx.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                   ?? ctx.User.FindFirstValue("sub");
+            if (!Guid.TryParse(sub, out var requesterId)) return Results.Unauthorized();
 
             var command = new RunLiveDraftCommand(championshipId, requesterId);
             var result = await mediator.Send(command, ct);
@@ -26,7 +27,6 @@ public static class DraftEndpoints
             if (!result.IsSuccess)
                 return Results.BadRequest(ApiResponse<IReadOnlyList<DraftResultDto>>.Fail(result.Error));
 
-            // Broadcast each draw result to championship group via SignalR
             foreach (var draw in result.Value)
             {
                 await hub.Clients.Group($"championship-{championshipId}")
@@ -46,8 +46,7 @@ public static class DraftEndpoints
         .WithName("RunLiveDraft")
         .WithSummary("Executa o sorteio de times (só organizador). Resultado transmitido via SignalR.");
 
-        group.MapGet("/events", async (Guid championshipId, IDraftEventRepository draftEvents,
-            IEnrollmentRepository enrollments, IUserRepository users, ILicensedTeamRepository teams, CancellationToken ct) =>
+        group.MapGet("/events", async (Guid championshipId, IDraftEventRepository draftEvents, CancellationToken ct) =>
         {
             var events = await draftEvents.GetByChampionshipAsync(championshipId, ct);
             return Results.Ok(ApiResponse<object>.Ok(events.Select(e => new
@@ -57,14 +56,5 @@ public static class DraftEndpoints
         })
         .WithName("GetDraftEvents")
         .WithSummary("Retorna o resultado do sorteio.");
-    }
-
-    private static async Task<Guid> GetUserIdAsync(HttpContext ctx, IUserRepository users, CancellationToken ct)
-    {
-        var supabaseUid = ctx.User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? ctx.User.FindFirstValue("sub");
-        if (supabaseUid is null) return Guid.Empty;
-        var user = await users.GetBySupabaseUidAsync(supabaseUid, ct);
-        return user?.Id ?? Guid.Empty;
     }
 }

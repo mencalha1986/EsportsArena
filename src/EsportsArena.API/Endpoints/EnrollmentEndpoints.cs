@@ -26,9 +26,9 @@ public static class EnrollmentEndpoints
         .WithSummary("Lista inscrições ativas de um campeonato.");
 
         champGroup.MapPost("/", async (Guid championshipId, EnrollRequest req, IMediator mediator,
-            IUserRepository users, HttpContext ctx, CancellationToken ct) =>
+            HttpContext ctx, CancellationToken ct) =>
         {
-            var userId = await GetUserIdAsync(ctx, users, ct);
+            var userId = GetUserIdFromClaims(ctx);
             if (userId == Guid.Empty) return Results.Unauthorized();
 
             var command = new EnrollUserCommand(championshipId, userId, req.IdentityName);
@@ -43,9 +43,9 @@ public static class EnrollmentEndpoints
         .WithSummary("Inscreve o usuário autenticado no campeonato.");
 
         enrollGroup.MapPost("/{enrollmentId:guid}/withdraw", async (Guid enrollmentId, IMediator mediator,
-            IUserRepository users, HttpContext ctx, CancellationToken ct) =>
+            HttpContext ctx, CancellationToken ct) =>
         {
-            var requesterId = await GetUserIdAsync(ctx, users, ct);
+            var requesterId = GetUserIdFromClaims(ctx);
             if (requesterId == Guid.Empty) return Results.Unauthorized();
 
             var command = new RecordWithdrawalCommand(enrollmentId, requesterId);
@@ -57,13 +57,11 @@ public static class EnrollmentEndpoints
         .WithSummary("Registra desistência e converte partidas futuras em W.O.");
     }
 
-    private static async Task<Guid> GetUserIdAsync(HttpContext ctx, IUserRepository users, CancellationToken ct)
+    private static Guid GetUserIdFromClaims(HttpContext ctx)
     {
-        var supabaseUid = ctx.User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? ctx.User.FindFirstValue("sub");
-        if (supabaseUid is null) return Guid.Empty;
-        var user = await users.GetBySupabaseUidAsync(supabaseUid, ct);
-        return user?.Id ?? Guid.Empty;
+        var sub = ctx.User.FindFirstValue(ClaimTypes.NameIdentifier)
+               ?? ctx.User.FindFirstValue("sub");
+        return Guid.TryParse(sub, out var id) ? id : Guid.Empty;
     }
 }
 

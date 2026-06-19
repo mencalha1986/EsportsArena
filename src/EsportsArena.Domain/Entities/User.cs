@@ -5,7 +5,6 @@ namespace EsportsArena.Domain.Entities;
 
 public sealed class User : Entity
 {
-    public string? SupabaseUid { get; private set; }
     public string Email { get; private set; } = default!;
     public string PasswordHash { get; private set; } = default!;
     public string PlatformId { get; private set; } = default!;

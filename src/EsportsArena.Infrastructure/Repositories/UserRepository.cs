@@ -12,9 +12,6 @@ public sealed class UserRepository : BaseRepository<User>, IUserRepository
     public async Task<User?> GetByEmailAsync(string email, CancellationToken ct = default)
         => await Context.Users.FirstOrDefaultAsync(u => u.Email == email.ToLowerInvariant(), ct);
 
-    public async Task<User?> GetBySupabaseUidAsync(string supabaseUid, CancellationToken ct = default)
-        => await Context.Users.FirstOrDefaultAsync(u => u.SupabaseUid == supabaseUid, ct);
-
     public async Task<User?> GetByPlatformIdAsync(string platformId, CancellationToken ct = default)
         => await Context.Users.FirstOrDefaultAsync(u => u.PlatformId == platformId.ToLowerInvariant(), ct);
 

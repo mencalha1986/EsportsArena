@@ -37,10 +37,10 @@ public static class ChampionshipEndpoints
         .WithName("GetChampionship")
         .WithSummary("Retorna os detalhes de um campeonato.");
 
-        group.MapPost("/", async (CreateChampionshipRequest req, IMediator mediator, IUserRepository users,
+        group.MapPost("/", async (CreateChampionshipRequest req, IMediator mediator,
             HttpContext ctx, CancellationToken ct) =>
         {
-            var organizerId = await GetUserIdAsync(ctx, users, ct);
+            var organizerId = GetUserIdFromClaims(ctx);
             if (organizerId == Guid.Empty) return Results.Unauthorized();
 
             var command = new CreateChampionshipCommand(req.GameId, organizerId, req.Name, req.Format,
@@ -54,10 +54,10 @@ public static class ChampionshipEndpoints
         .WithName("CreateChampionship")
         .WithSummary("Cria um novo campeonato.");
 
-        group.MapPatch("/{id:guid}/open", async (Guid id, IMediator mediator, IUserRepository users,
+        group.MapPatch("/{id:guid}/open", async (Guid id, IMediator mediator,
             HttpContext ctx, CancellationToken ct) =>
         {
-            var requesterId = await GetUserIdAsync(ctx, users, ct);
+            var requesterId = GetUserIdFromClaims(ctx);
             if (requesterId == Guid.Empty) return Results.Unauthorized();
 
             var result = await mediator.Send(new OpenEnrollmentsCommand(id, requesterId), ct);
@@ -67,10 +67,10 @@ public static class ChampionshipEndpoints
         .WithName("OpenEnrollments")
         .WithSummary("Abre as inscrições do campeonato.");
 
-        group.MapPatch("/{id:guid}/start", async (Guid id, IMediator mediator, IUserRepository users,
+        group.MapPatch("/{id:guid}/start", async (Guid id, IMediator mediator,
             HttpContext ctx, CancellationToken ct) =>
         {
-            var requesterId = await GetUserIdAsync(ctx, users, ct);
+            var requesterId = GetUserIdFromClaims(ctx);
             if (requesterId == Guid.Empty) return Results.Unauthorized();
 
             var result = await mediator.Send(new StartChampionshipCommand(id, requesterId), ct);
@@ -101,13 +101,11 @@ public static class ChampionshipEndpoints
         .WithSummary("Retorna todas as rodadas com partidas e placares.");
     }
 
-    private static async Task<Guid> GetUserIdAsync(HttpContext ctx, IUserRepository users, CancellationToken ct)
+    private static Guid GetUserIdFromClaims(HttpContext ctx)
     {
-        var supabaseUid = ctx.User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? ctx.User.FindFirstValue("sub");
-        if (supabaseUid is null) return Guid.Empty;
-        var user = await users.GetBySupabaseUidAsync(supabaseUid, ct);
-        return user?.Id ?? Guid.Empty;
+        var sub = ctx.User.FindFirstValue(ClaimTypes.NameIdentifier)
+               ?? ctx.User.FindFirstValue("sub");
+        return Guid.TryParse(sub, out var id) ? id : Guid.Empty;
     }
 }
 
