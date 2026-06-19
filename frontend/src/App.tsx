@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, NavLink, Link, useNavigate } from 'react-router-dom';
 import { useAuth, clearToken } from './hooks/useAuth';
 import { useUserRole } from './hooks/useUserRole';
 import LoginPage from './pages/auth/LoginPage';
@@ -19,24 +19,23 @@ import LandingPage from './pages/landing/LandingPage';
 interface SidebarLinkProps { to: string; icon: string; label: string; }
 
 function SidebarLink({ to, icon, label }: SidebarLinkProps) {
-  const { pathname } = useLocation();
-  const active = pathname === to || pathname.startsWith(to + '/');
   return (
-    <Link
+    <NavLink
       to={to}
-      style={{
+      end
+      style={({ isActive }) => ({
         display: 'flex', alignItems: 'center', gap: 10,
         padding: '9px 14px', borderRadius: 'var(--radius)',
-        color: active ? 'var(--accent)' : 'var(--text-muted)',
-        background: active ? 'var(--accent-glow)' : 'transparent',
-        fontWeight: active ? 600 : 400, fontSize: 14,
+        color: isActive ? 'var(--accent)' : 'var(--text-muted)',
+        background: isActive ? 'var(--accent-glow)' : 'transparent',
+        fontWeight: isActive ? 600 : 400, fontSize: 14,
         textDecoration: 'none',
         transition: 'color 0.15s, background 0.15s',
-      }}
+      })}
     >
       <span style={{ fontSize: 16, width: 20, textAlign: 'center' }}>{icon}</span>
       <span>{label}</span>
-    </Link>
+    </NavLink>
   );
 }
 
