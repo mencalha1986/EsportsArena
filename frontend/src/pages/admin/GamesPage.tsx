@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useUserRole } from '../../hooks/useUserRole';
 import { useApi } from '../../hooks/useApi';
+import CustomSelect from '../../components/CustomSelect';
 
 interface GameDto {
   id: string;
@@ -267,7 +268,6 @@ export default function GamesPage() {
     boxSizing: 'border-box',
   };
 
-  const selectStyle: React.CSSProperties = { ...inputStyle, cursor: 'pointer' };
 
   const labelStyle: React.CSSProperties = {
     fontSize: 12,
@@ -384,18 +384,16 @@ export default function GamesPage() {
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 520 }}>
           <div>
             <label style={labelStyle}>Categoria</label>
-            <select
-              style={selectStyle}
+            <CustomSelect
               value={form.category}
-              onChange={e => setField('category', e.target.value)}
+              onChange={val => setField('category', val)}
+              placeholder="Selecione uma categoria..."
               disabled={submitting}
-            >
-              <option value="">Selecione uma categoria...</option>
-              {SUGGESTED_GAMES.map(({ category }) => (
-                <option key={category} value={category}>{category}</option>
-              ))}
-              <option value="Other">Other</option>
-            </select>
+              options={[
+                ...SUGGESTED_GAMES.map(({ category }) => ({ value: category, label: category })),
+                { value: 'Other', label: 'Other' },
+              ]}
+            />
           </div>
 
           <div>
@@ -428,28 +426,28 @@ export default function GamesPage() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <div>
               <label style={labelStyle}>Modo de Inscrição</label>
-              <select
-                style={selectStyle}
+              <CustomSelect
                 value={form.inscriptionMode}
-                onChange={e => setField('inscriptionMode', e.target.value)}
+                onChange={val => setField('inscriptionMode', val)}
                 disabled={submitting}
-              >
-                <option value="OwnIdentity">Identidade Própria</option>
-                <option value="LicensedTeams">Times Licenciados</option>
-              </select>
+                options={[
+                  { value: 'OwnIdentity', label: 'Identidade Própria' },
+                  { value: 'LicensedTeams', label: 'Times Licenciados' },
+                ]}
+              />
             </div>
             <div>
               <label style={labelStyle}>Exibição de Placar</label>
-              <select
-                style={selectStyle}
+              <CustomSelect
                 value={form.scoreDisplay}
-                onChange={e => setField('scoreDisplay', e.target.value)}
+                onChange={val => setField('scoreDisplay', val)}
                 disabled={submitting}
-              >
-                <option value="points">Pontos</option>
-                <option value="goals">Gols</option>
-                <option value="sets">Sets</option>
-              </select>
+                options={[
+                  { value: 'points', label: 'Pontos' },
+                  { value: 'goals', label: 'Gols' },
+                  { value: 'sets', label: 'Sets' },
+                ]}
+              />
             </div>
           </div>
 

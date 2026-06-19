@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApi } from '../../hooks/useApi';
+import CustomSelect from '../../components/CustomSelect';
 
 interface Game {
   id: string;
@@ -10,24 +11,6 @@ interface Game {
   scoreDisplay: string;
 }
 
-const selectStyle: React.CSSProperties = {
-  width: '100%',
-  background: 'rgba(255,255,255,0.04)',
-  border: '1px solid var(--border)',
-  borderRadius: 'var(--radius)',
-  color: 'var(--text)',
-  fontFamily: 'var(--font)',
-  fontSize: 15,
-  padding: '12px 16px',
-  outline: 'none',
-  cursor: 'pointer',
-  appearance: 'none',
-  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237070a0' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
-  backgroundRepeat: 'no-repeat',
-  backgroundPosition: 'right 14px center',
-  paddingRight: 36,
-  transition: 'border-color 0.18s, box-shadow 0.18s',
-};
 
 const textareaStyle: React.CSSProperties = {
   width: '100%',
@@ -127,31 +110,25 @@ export default function NewChampionshipPage() {
             {/* Jogo */}
             <div className="field">
               <label className="field-label">Jogo</label>
-              <select
-                style={selectStyle}
+              <CustomSelect
                 value={gameId}
-                onChange={e => setGameId(e.target.value)}
-                required
-                onFocus={e => { e.target.style.borderColor = 'var(--accent)'; e.target.style.boxShadow = '0 0 0 3px var(--accent-glow)'; }}
-                onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
-              >
-                <option value="" style={{ background: '#0f0f1e' }}>Selecione um jogo...</option>
-                {Object.entries(
+                onChange={setGameId}
+                placeholder="Selecione um jogo..."
+                groups={Object.entries(
                   games.reduce<Record<string, Game[]>>((acc, g) => {
                     const cat = g.category || 'Other';
                     (acc[cat] ??= []).push(g);
                     return acc;
                   }, {})
-                ).map(([cat, catGames]) => (
-                  <optgroup key={cat} label={cat}>
-                    {catGames.map(g => (
-                      <option key={g.id} value={g.id} style={{ background: '#0f0f1e' }}>{g.name}</option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
+                ).map(([label, catGames]) => ({
+                  label,
+                  options: catGames.map(g => ({ value: g.id, label: g.name })),
+                }))}
+              />
               {games.length === 0 && (
-                <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>Nenhum jogo cadastrado. Peça ao SuperAdmin para cadastrar jogos em Jogos.</span>
+                <span style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 4, display: 'block' }}>
+                  Nenhum jogo cadastrado. Peça ao SuperAdmin para cadastrar jogos.
+                </span>
               )}
             </div>
 
