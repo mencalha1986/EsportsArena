@@ -7,6 +7,7 @@ interface GameDto {
   id: string;
   name: string;
   slug: string;
+  category: string;
   inscriptionMode: string;
   scoreDisplay: string;
   iconUrl: string | null;
@@ -135,6 +136,7 @@ export default function GamesPage() {
   const [form, setForm] = useState({
     name: '',
     slug: '',
+    category: '',
     inscriptionMode: 'OwnIdentity',
     scoreDisplay: 'points',
     iconUrl: '',
@@ -166,10 +168,11 @@ export default function GamesPage() {
     setForm(f => ({ ...f, name: value, slug: toSlug(value) }));
   }
 
-  function fillFromSuggestion(gameName: string) {
+  function fillFromSuggestion(gameName: string, category: string) {
     setForm({
       name: gameName,
       slug: toSlug(gameName),
+      category,
       inscriptionMode: 'OwnIdentity',
       scoreDisplay: 'points',
       iconUrl: '',
@@ -194,12 +197,13 @@ export default function GamesPage() {
       await api.post('/api/v1/admin/games', {
         name: form.name.trim(),
         slug: form.slug.trim(),
+        category: form.category.trim() || 'Other',
         inscriptionMode: form.inscriptionMode,
         scoreDisplay: form.scoreDisplay,
         iconUrl: form.iconUrl.trim() || null,
       });
       setFormSuccess(`"${form.name}" cadastrado com sucesso!`);
-      setForm({ name: '', slug: '', inscriptionMode: 'OwnIdentity', scoreDisplay: 'points', iconUrl: '' });
+      setForm({ name: '', slug: '', category: '', inscriptionMode: 'OwnIdentity', scoreDisplay: 'points', iconUrl: '' });
       loadGames();
     } catch (err: any) {
       setFormError(err?.response?.data?.error ?? 'Erro ao cadastrar jogo.');
@@ -325,6 +329,7 @@ export default function GamesPage() {
             <thead>
               <tr>
                 <th style={thStyle}>Jogo</th>
+                <th style={thStyle}>Categoria</th>
                 <th style={thStyle}>Slug</th>
                 <th style={thStyle}>Modo de Inscrição</th>
                 <th style={thStyle}>Placar</th>
@@ -350,6 +355,9 @@ export default function GamesPage() {
                       <span style={{ fontWeight: 600 }}>{g.name}</span>
                     </div>
                   </td>
+                  <td style={tdStyle}>
+                    <span className="badge-muted">{g.category}</span>
+                  </td>
                   <td style={{ ...tdStyle, color: 'var(--text-muted)', fontFamily: 'monospace', fontSize: 12 }}>
                     {g.slug}
                   </td>
@@ -374,6 +382,22 @@ export default function GamesPage() {
       <div ref={formRef} style={sectionCard}>
         <h2 style={{ margin: '0 0 20px', fontSize: 15, fontWeight: 700 }}>Cadastrar Novo Jogo</h2>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 520 }}>
+          <div>
+            <label style={labelStyle}>Categoria</label>
+            <select
+              style={selectStyle}
+              value={form.category}
+              onChange={e => setField('category', e.target.value)}
+              disabled={submitting}
+            >
+              <option value="">Selecione uma categoria...</option>
+              {SUGGESTED_GAMES.map(({ category }) => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
           <div>
             <label style={labelStyle}>Nome do jogo *</label>
             <input
@@ -509,7 +533,7 @@ export default function GamesPage() {
                         <button
                           key={gameName}
                           type="button"
-                          onClick={() => !registered && fillFromSuggestion(gameName)}
+                          onClick={() => !registered && fillFromSuggestion(gameName, category)}
                           style={chipStyle(registered)}
                           title={registered ? 'Já cadastrado' : `Pré-preencher: ${gameName}`}
                         >

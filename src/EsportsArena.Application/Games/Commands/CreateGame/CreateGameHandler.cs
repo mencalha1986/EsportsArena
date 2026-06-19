@@ -17,7 +17,7 @@ public sealed class CreateGameHandler : IRequestHandler<CreateGameCommand, Resul
         if (await _games.GetBySlugAsync(request.Slug, ct) is not null)
             return Result<Guid>.Failure($"Jogo com slug '{request.Slug}' já existe.");
 
-        var result = Game.Create(request.Name, request.Slug, request.InscriptionMode, request.ScoreDisplay, request.IconUrl);
+        var result = Game.Create(request.Name, request.Slug, request.InscriptionMode, request.ScoreDisplay, request.IconUrl, request.Category);
         if (!result.IsSuccess) return Result<Guid>.Failure(result.Error);
 
         await _games.AddAsync(result.Value, ct);

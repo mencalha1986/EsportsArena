@@ -12,6 +12,7 @@ public sealed class GameConfiguration : IEntityTypeConfiguration<Game>
         builder.HasKey(g => g.Id);
         builder.Property(g => g.Name).IsRequired().HasMaxLength(100);
         builder.Property(g => g.Slug).IsRequired().HasMaxLength(60);
+        builder.Property(g => g.Category).IsRequired().HasMaxLength(60).HasDefaultValue("Other");
         builder.Property(g => g.InscriptionMode).IsRequired().HasConversion<string>();
         builder.Property(g => g.ScoreDisplay).IsRequired().HasMaxLength(20).HasDefaultValue("goals");
         builder.Property(g => g.IconUrl).HasMaxLength(1000);

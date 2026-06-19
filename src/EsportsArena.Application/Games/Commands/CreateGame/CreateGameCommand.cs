@@ -9,4 +9,5 @@ public record CreateGameCommand(
     string Slug,
     InscriptionMode InscriptionMode,
     string ScoreDisplay,
-    string? IconUrl) : IRequest<Result<Guid>>;
+    string? IconUrl,
+    string Category = "Other") : IRequest<Result<Guid>>;

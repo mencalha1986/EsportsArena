@@ -5,6 +5,7 @@ import { useApi } from '../../hooks/useApi';
 interface Game {
   id: string;
   name: string;
+  category: string;
   inscriptionMode: string;
   scoreDisplay: string;
 }
@@ -135,12 +136,22 @@ export default function NewChampionshipPage() {
                 onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
               >
                 <option value="" style={{ background: '#0f0f1e' }}>Selecione um jogo...</option>
-                {games.map(g => (
-                  <option key={g.id} value={g.id} style={{ background: '#0f0f1e' }}>{g.name}</option>
+                {Object.entries(
+                  games.reduce<Record<string, Game[]>>((acc, g) => {
+                    const cat = g.category || 'Other';
+                    (acc[cat] ??= []).push(g);
+                    return acc;
+                  }, {})
+                ).map(([cat, catGames]) => (
+                  <optgroup key={cat} label={cat}>
+                    {catGames.map(g => (
+                      <option key={g.id} value={g.id} style={{ background: '#0f0f1e' }}>{g.name}</option>
+                    ))}
+                  </optgroup>
                 ))}
               </select>
               {games.length === 0 && (
-                <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>Carregando jogos...</span>
+                <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>Nenhum jogo cadastrado. Peça ao SuperAdmin para cadastrar jogos em Jogos.</span>
               )}
             </div>
 

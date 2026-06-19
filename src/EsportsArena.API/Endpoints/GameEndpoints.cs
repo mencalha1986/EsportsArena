@@ -25,7 +25,7 @@ public static class GameEndpoints
 
         adminGroup.MapPost("/", async (CreateGameRequest req, IMediator mediator, CancellationToken ct) =>
         {
-            var command = new CreateGameCommand(req.Name, req.Slug, req.InscriptionMode, req.ScoreDisplay ?? "goals", req.IconUrl);
+            var command = new CreateGameCommand(req.Name, req.Slug, req.InscriptionMode, req.ScoreDisplay ?? "goals", req.IconUrl, req.Category ?? "Other");
             var result = await mediator.Send(command, ct);
             return result.IsSuccess
                 ? Results.Created($"/api/v1/games/{result.Value}", ApiResponse<Guid>.Ok(result.Value))
@@ -47,5 +47,5 @@ public static class GameEndpoints
     }
 }
 
-public record CreateGameRequest(string Name, string Slug, InscriptionMode InscriptionMode, string? ScoreDisplay, string? IconUrl);
+public record CreateGameRequest(string Name, string Slug, InscriptionMode InscriptionMode, string? ScoreDisplay, string? IconUrl, string? Category);
 public record AddTeamRequest(string Name, byte Stars, string? LogoUrl);

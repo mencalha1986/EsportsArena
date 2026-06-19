@@ -13,7 +13,7 @@ public sealed class GetGamesHandler : IRequestHandler<GetGamesQuery, Result<IRea
     public async Task<Result<IReadOnlyList<GameDto>>> Handle(GetGamesQuery request, CancellationToken ct)
     {
         var games = await _games.GetActiveGamesAsync(ct);
-        var dtos = games.Select(g => new GameDto(g.Id, g.Name, g.Slug, g.InscriptionMode.ToString(), g.ScoreDisplay, g.IconUrl))
+        var dtos = games.Select(g => new GameDto(g.Id, g.Name, g.Slug, g.Category, g.InscriptionMode.ToString(), g.ScoreDisplay, g.IconUrl))
                         .ToList();
         return Result<IReadOnlyList<GameDto>>.Success(dtos);
     }
