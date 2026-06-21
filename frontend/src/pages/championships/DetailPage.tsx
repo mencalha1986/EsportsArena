@@ -18,6 +18,21 @@ interface ChampionshipDetail {
   organizerPlatformId: string;
 }
 
+interface MyEnrollment {
+  id: string;
+  identityName?: string;
+  status: 'Pending' | 'Accepted' | 'Rejected';
+  isActive: boolean;
+  createdAt: string;
+}
+
+interface PendingEnrollment {
+  id: string;
+  userId: string;
+  identityName?: string;
+  createdAt: string;
+}
+
 const STATUS_META: Record<string, { label: string; badge: string; color: string; dot: string }> = {
   Draft:            { label: 'Rascunho',          badge: 'badge badge-muted',   color: 'var(--text-muted)', dot: 'var(--text-dim)' },
   EnrollmentsOpen:  { label: 'Inscrições abertas', badge: 'badge badge-green',   color: 'var(--success)',    dot: 'var(--success)' },
@@ -33,6 +48,12 @@ const FORMAT_LABEL: Record<string, string> = {
 const INSCRIPTION_LABEL: Record<string, string> = {
   OwnIdentity:  'Clube / Dupla própria',
   LicensedTeam: 'Time licenciado',
+};
+
+const ENROLLMENT_STATUS_META: Record<string, { label: string; color: string; bg: string; border: string }> = {
+  Pending:  { label: 'Aguardando aprovação', color: 'var(--warning)',    bg: 'rgba(245,158,11,0.08)',  border: 'rgba(245,158,11,0.25)' },
+  Accepted: { label: 'Inscrito e aceito',    color: 'var(--success)',    bg: 'rgba(34,197,94,0.08)',   border: 'rgba(34,197,94,0.25)' },
+  Rejected: { label: 'Inscrição rejeitada',  color: 'var(--danger,#ef4444)', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.25)' },
 };
 
 function InfoCard({ icon, label, value, accent }: { icon: string; label: string; value: string; accent?: string }) {
@@ -75,12 +96,18 @@ export default function ChampionshipDetailPage() {
   const api = useApi();
   const { session } = useAuth();
   const { role } = useUserRole();
+
   const [championship, setChampionship] = useState<ChampionshipDetail | null>(null);
+  const [myEnrollment, setMyEnrollment] = useState<MyEnrollment | null | undefined>(undefined);
+  const [pendingEnrollments, setPendingEnrollments] = useState<PendingEnrollment[]>([]);
   const [identityName, setIdentityName] = useState('');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
   const [actioning, setActioning] = useState(false);
+  const [reviewingId, setReviewingId] = useState<string | null>(null);
+
+  const isOrganizer = role === 'SuperAdmin' || role === 'Admin';
 
   useEffect(() => {
     api.get(`/api/v1/championships/${id}`)
@@ -88,14 +115,33 @@ export default function ChampionshipDetailPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  // Load current user's enrollment
+  useEffect(() => {
+    if (!session) { setMyEnrollment(null); return; }
+    api.get(`/api/v1/championships/${id}/enrollments/my`)
+      .then(r => setMyEnrollment(r.data.data ?? null))
+      .catch(() => setMyEnrollment(null));
+  }, [id, session]);
+
+  // Load pending enrollments for organizer
+  useEffect(() => {
+    if (!isOrganizer || !championship || championship.status !== 'EnrollmentsOpen') return;
+    api.get(`/api/v1/championships/${id}/enrollments/pending`)
+      .then(r => setPendingEnrollments(r.data.data ?? []))
+      .catch(() => setPendingEnrollments([]));
+  }, [id, isOrganizer, championship?.status]);
+
   async function handleEnroll() {
     setMessage(null);
     setEnrolling(true);
     try {
       const payload = championship?.gameInscriptionMode === 'OwnIdentity' ? { identityName } : {};
-      await api.post(`/api/v1/championships/${id}/enrollments`, payload);
-      setMessage({ type: 'success', text: 'Inscrição realizada com sucesso!' });
+      const res = await api.post(`/api/v1/championships/${id}/enrollments`, payload);
+      setMessage({ type: 'success', text: 'Inscrição enviada! Aguarde a aprovação do organizador.' });
       setIdentityName('');
+      // Refresh my enrollment
+      const me = await api.get(`/api/v1/championships/${id}/enrollments/my`);
+      setMyEnrollment(me.data.data ?? null);
     } catch (err: any) {
       setMessage({ type: 'error', text: err.response?.data?.error ?? 'Erro ao se inscrever.' });
     } finally {
@@ -123,6 +169,18 @@ export default function ChampionshipDetailPage() {
     }
   }
 
+  async function handleReview(enrollmentId: string, action: 'accept' | 'reject') {
+    setReviewingId(enrollmentId);
+    try {
+      await api.patch(`/api/v1/enrollments/${enrollmentId}/${action}`);
+      setPendingEnrollments(prev => prev.filter(e => e.id !== enrollmentId));
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.response?.data?.error ?? `Erro ao ${action === 'accept' ? 'aceitar' : 'rejeitar'}.` });
+    } finally {
+      setReviewingId(null);
+    }
+  }
+
   if (loading) return <PageSkeleton />;
 
   if (!championship) {
@@ -139,11 +197,13 @@ export default function ChampionshipDetailPage() {
     );
   }
 
-  const isOrganizer = role === 'SuperAdmin' || role === 'Admin';
   const meta = STATUS_META[championship.status] ?? STATUS_META.Draft;
   const starsRange = championship.minStars != null
     ? `${championship.minStars}${championship.maxStars ? ` – ${championship.maxStars}` : '+'} ⭐`
     : null;
+
+  const enrollMeta = myEnrollment ? ENROLLMENT_STATUS_META[myEnrollment.status] : null;
+  const canEnroll = !myEnrollment && championship.status === 'EnrollmentsOpen' && session && !isOrganizer;
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', padding: '40px 32px', animation: 'fadeIn 0.25s ease' }}>
@@ -205,6 +265,34 @@ export default function ChampionshipDetailPage() {
           </div>
         )}
 
+        {/* Player enrollment status banner */}
+        {session && !isOrganizer && myEnrollment && enrollMeta && (
+          <div style={{
+            background: enrollMeta.bg,
+            border: `1px solid ${enrollMeta.border}`,
+            borderRadius: 'var(--radius)',
+            padding: '14px 18px',
+            marginBottom: 20,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+          }}>
+            <span style={{ fontSize: 16 }}>
+              {myEnrollment.status === 'Accepted' ? '✓' : myEnrollment.status === 'Rejected' ? '✗' : '⏳'}
+            </span>
+            <div>
+              <span style={{ fontSize: 14, fontWeight: 700, color: enrollMeta.color }}>
+                {enrollMeta.label}
+              </span>
+              {myEnrollment.identityName && (
+                <span style={{ fontSize: 13, color: 'var(--text-muted)', marginLeft: 8 }}>
+                  — {myEnrollment.identityName}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Actions panel */}
         {session && (
           <div style={{
@@ -219,8 +307,8 @@ export default function ChampionshipDetailPage() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-              {/* Enroll row */}
-              {championship.status === 'EnrollmentsOpen' && (
+              {/* Enroll row — only if not yet enrolled */}
+              {canEnroll && (
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, flexWrap: 'wrap' }}>
                   {championship.gameInscriptionMode === 'OwnIdentity' && (
                     <div className="field" style={{ minWidth: 220 }}>
@@ -244,11 +332,11 @@ export default function ChampionshipDetailPage() {
                 </div>
               )}
 
-              {/* Organizer row — separated if enroll row is also shown */}
+              {/* Organizer rows */}
               {isOrganizer && (
                 <>
                   {championship.status === 'EnrollmentsOpen' && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                       <Link to={`/championships/${id}/draft`} className="btn btn-outline">
                         🎲 Sorteio ao vivo
                       </Link>
@@ -264,7 +352,7 @@ export default function ChampionshipDetailPage() {
                       </button>
                     </div>
                   )}
-                  {championship.status === 'InProgress' && (
+                  {(championship.status === 'InProgress' || championship.status === 'Finished') && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <Link to={`/championships/${id}/league`} className="btn btn-primary">
                         🏆 Ver tabela / rodadas
@@ -275,7 +363,7 @@ export default function ChampionshipDetailPage() {
               )}
 
               {/* Player-only: in progress */}
-              {!isOrganizer && championship.status === 'InProgress' && (
+              {!isOrganizer && (championship.status === 'InProgress' || championship.status === 'Finished') && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <Link to={`/championships/${id}/league`} className="btn btn-outline">
                     🏆 Ver tabela / rodadas
@@ -284,7 +372,7 @@ export default function ChampionshipDetailPage() {
               )}
 
               {/* No actions */}
-              {championship.status === 'Finished' && (
+              {championship.status === 'Finished' && !isOrganizer && (
                 <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
                   Este campeonato foi encerrado.
                 </span>
@@ -294,7 +382,78 @@ export default function ChampionshipDetailPage() {
                   Aguardando abertura das inscrições.
                 </span>
               )}
+              {championship.status === 'EnrollmentsOpen' && !isOrganizer && myEnrollment && (
+                <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+                  Aguardando início do campeonato.
+                </span>
+              )}
             </div>
+          </div>
+        )}
+
+        {/* Organizer: pending enrollments panel */}
+        {isOrganizer && championship.status === 'EnrollmentsOpen' && (
+          <div style={{
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '24px 28px',
+            marginTop: 20,
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <p style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.7, color: 'var(--text-dim)', margin: 0 }}>
+                Inscrições pendentes
+              </p>
+              {pendingEnrollments.length > 0 && (
+                <span className="badge badge-green">{pendingEnrollments.length} pendente{pendingEnrollments.length > 1 ? 's' : ''}</span>
+              )}
+            </div>
+
+            {pendingEnrollments.length === 0 ? (
+              <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>
+                Nenhuma inscrição pendente no momento.
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {pendingEnrollments.map(e => (
+                  <div key={e.id} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    gap: 12, padding: '12px 16px',
+                    background: 'var(--surface-alt)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius)',
+                    flexWrap: 'wrap',
+                  }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>
+                        {e.identityName ?? <span style={{ color: 'var(--text-dim)', fontStyle: 'italic' }}>Sem identidade</span>}
+                      </span>
+                      <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>
+                        {new Date(e.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        className="btn btn-sm"
+                        style={{ background: 'rgba(34,197,94,0.15)', color: 'var(--success)', border: '1px solid rgba(34,197,94,0.3)' }}
+                        disabled={reviewingId === e.id}
+                        onClick={() => handleReview(e.id, 'accept')}
+                      >
+                        {reviewingId === e.id ? '...' : '✓ Aceitar'}
+                      </button>
+                      <button
+                        className="btn btn-sm"
+                        style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.25)' }}
+                        disabled={reviewingId === e.id}
+                        onClick={() => handleReview(e.id, 'reject')}
+                      >
+                        {reviewingId === e.id ? '...' : '✗ Rejeitar'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

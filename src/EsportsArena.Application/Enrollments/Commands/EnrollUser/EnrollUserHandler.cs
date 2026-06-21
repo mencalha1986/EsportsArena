@@ -38,8 +38,17 @@ public sealed class EnrollUserHandler : IRequestHandler<EnrollUserCommand, Resul
         if (game.InscriptionMode == InscriptionMode.OwnIdentity && string.IsNullOrWhiteSpace(request.IdentityName))
             return Result<Guid>.Failure("Nome de identidade é obrigatório para este modo de jogo.");
 
-        if (await _enrollments.ExistsAsync(request.ChampionshipId, request.UserId, ct))
-            return Result<Guid>.Failure("Usuário já inscrito neste campeonato.");
+        var existing = await _enrollments.GetByChampionshipAndUserAsync(request.ChampionshipId, request.UserId, ct);
+        if (existing is not null)
+        {
+            return existing.Status.ToString() switch
+            {
+                "Pending"  => Result<Guid>.Failure("Você já está inscrito e aguardando aprovação do organizador."),
+                "Accepted" => Result<Guid>.Failure("Você já foi aceito neste campeonato."),
+                "Rejected" => Result<Guid>.Failure("Sua inscrição foi rejeitada. Entre em contato com o organizador."),
+                _          => Result<Guid>.Failure("Você já possui uma inscrição neste campeonato.")
+            };
+        }
 
         var identityName = game.InscriptionMode == InscriptionMode.OwnIdentity ? request.IdentityName : null;
         var result = Enrollment.Create(request.ChampionshipId, request.UserId, identityName);

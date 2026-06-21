@@ -36,8 +36,8 @@ public sealed class StartChampionshipHandler : IRequestHandler<StartChampionship
         if (championship is null) return Result.Failure("Campeonato não encontrado.");
         if (championship.OrganizerId != request.RequesterId) return Result.Failure("Somente o organizador pode iniciar o campeonato.");
 
-        var activeEnrollments = await _enrollments.GetActiveByChampionshipAsync(request.ChampionshipId, ct);
-        if (activeEnrollments.Count < 2) return Result.Failure("São necessários pelo menos 2 inscritos para iniciar.");
+        var activeEnrollments = await _enrollments.GetAcceptedByChampionshipAsync(request.ChampionshipId, ct);
+        if (activeEnrollments.Count < 2) return Result.Failure("São necessários pelo menos 2 inscrições aceitas para iniciar.");
 
         var startResult = championship.Start();
         if (!startResult.IsSuccess) return startResult;

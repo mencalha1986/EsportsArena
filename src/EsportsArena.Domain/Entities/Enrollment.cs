@@ -1,4 +1,5 @@
 using EsportsArena.Domain.Common;
+using EsportsArena.Domain.Enums;
 
 namespace EsportsArena.Domain.Entities;
 
@@ -8,9 +9,10 @@ public sealed class Enrollment : Entity
     public Guid UserId { get; private set; }
     public string? IdentityName { get; private set; }
     public Guid? LicensedTeamId { get; private set; }
+    public EnrollmentStatus Status { get; private set; }
     public DateTime? WithdrewAt { get; private set; }
 
-    public bool IsActive => WithdrewAt == null;
+    public bool IsActive => WithdrewAt == null && Status != EnrollmentStatus.Rejected;
 
     private Enrollment() { }
 
@@ -23,8 +25,26 @@ public sealed class Enrollment : Entity
         {
             ChampionshipId = championshipId,
             UserId = userId,
-            IdentityName = identityName?.Trim()
+            IdentityName = identityName?.Trim(),
+            Status = EnrollmentStatus.Pending
         });
+    }
+
+    public Result Accept()
+    {
+        if (Status == EnrollmentStatus.Accepted) return Result.Failure("Inscrição já foi aceita.");
+        if (Status == EnrollmentStatus.Rejected) return Result.Failure("Inscrição foi rejeitada e não pode ser aceita.");
+        Status = EnrollmentStatus.Accepted;
+        MarkUpdated();
+        return Result.Success();
+    }
+
+    public Result Reject()
+    {
+        if (Status == EnrollmentStatus.Rejected) return Result.Failure("Inscrição já foi rejeitada.");
+        Status = EnrollmentStatus.Rejected;
+        MarkUpdated();
+        return Result.Success();
     }
 
     public Result AssignTeam(Guid licensedTeamId)

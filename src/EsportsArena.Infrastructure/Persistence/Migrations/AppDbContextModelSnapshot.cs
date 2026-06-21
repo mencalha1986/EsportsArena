@@ -126,6 +126,12 @@ namespace EsportsArena.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("LicensedTeamId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("Accepted");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 

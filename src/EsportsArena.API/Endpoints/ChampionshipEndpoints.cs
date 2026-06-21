@@ -3,10 +3,10 @@ using EsportsArena.Application.Championships.Commands.CreateChampionship;
 using EsportsArena.Application.Championships.Commands.OpenEnrollments;
 using EsportsArena.Application.Championships.Commands.StartChampionship;
 using EsportsArena.Application.Championships.Queries.GetChampionship;
+using EsportsArena.Application.Championships.Queries.GetChampionships;
 using EsportsArena.Application.Championships.Queries.GetRounds;
 using EsportsArena.Application.Championships.Queries.GetStandings;
 using EsportsArena.Domain.Enums;
-using EsportsArena.Domain.Interfaces;
 using MediatR;
 using System.Security.Claims;
 
@@ -18,14 +18,16 @@ public static class ChampionshipEndpoints
     {
         var group = app.MapGroup("/api/v1/championships").WithTags("Championships");
 
-        group.MapGet("/", async (Guid? gameId, string? status, Guid? organizerId, IChampionshipRepository championships, CancellationToken ct) =>
+        group.MapGet("/", async (Guid? gameId, string? status, Guid? organizerId, string? category,
+            IMediator mediator, CancellationToken ct) =>
         {
-            var list = await championships.GetByFiltersAsync(gameId, status, organizerId, ct);
-            var dtos = list.Select(c => new { c.Id, c.Name, c.Status, c.Format, c.GameId, c.OrganizerId, c.CreatedAt });
-            return Results.Ok(ApiResponse<object>.Ok(dtos));
+            var result = await mediator.Send(new GetChampionshipsQuery(gameId, status, organizerId, category), ct);
+            return result.IsSuccess
+                ? Results.Ok(ApiResponse<object>.Ok(result.Value))
+                : Results.BadRequest(ApiResponse<object>.Fail(result.Error));
         })
         .WithName("ListChampionships")
-        .WithSummary("Lista campeonatos com filtros opcionais.");
+        .WithSummary("Lista campeonatos com filtros opcionais (gameId, status, organizerId, category).");
 
         group.MapGet("/{id:guid}", async (Guid id, IMediator mediator, CancellationToken ct) =>
         {

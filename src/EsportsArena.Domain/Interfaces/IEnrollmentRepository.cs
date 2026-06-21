@@ -5,6 +5,8 @@ namespace EsportsArena.Domain.Interfaces;
 public interface IEnrollmentRepository : IRepository<Enrollment>
 {
     Task<List<Enrollment>> GetActiveByChampionshipAsync(Guid championshipId, CancellationToken ct = default);
+    Task<List<Enrollment>> GetAcceptedByChampionshipAsync(Guid championshipId, CancellationToken ct = default);
+    Task<List<Enrollment>> GetPendingByChampionshipAsync(Guid championshipId, CancellationToken ct = default);
     Task<Enrollment?> GetByChampionshipAndUserAsync(Guid championshipId, Guid userId, CancellationToken ct = default);
     Task<bool> ExistsAsync(Guid championshipId, Guid userId, CancellationToken ct = default);
 }
