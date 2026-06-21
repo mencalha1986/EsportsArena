@@ -248,7 +248,7 @@ export default function ChampionshipDetailPage() {
               {isOrganizer && (
                 <>
                   {championship.status === 'EnrollmentsOpen' && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', paddingTop: championship.status === 'EnrollmentsOpen' ? 4 : 0, borderTop: '1px solid var(--border)', paddingTop: 16 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', paddingTop: 16, borderTop: '1px solid var(--border)' }}>
                       <Link to={`/championships/${id}/draft`} className="btn btn-outline">
                         🎲 Sorteio ao vivo
                       </Link>
