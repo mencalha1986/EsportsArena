@@ -13,6 +13,8 @@ public sealed class User : Entity
     public UserRole Role { get; private set; } = UserRole.Player;
     public bool IsActive { get; private set; } = true;
     public string? SubscriptionNotes { get; private set; }
+    public int FailedLoginAttempts { get; private set; }
+    public bool RequiresPasswordChange { get; private set; }
 
     private User() { }
 
@@ -66,6 +68,31 @@ public sealed class User : Entity
     {
         Role = UserRole.SuperAdmin;
         MarkUpdated();
+    }
+
+    public void RecordFailedLogin()
+    {
+        FailedLoginAttempts++;
+        if (FailedLoginAttempts >= 3)
+            RequiresPasswordChange = true;
+        MarkUpdated();
+    }
+
+    public void RecordSuccessfulLogin()
+    {
+        FailedLoginAttempts = 0;
+        MarkUpdated();
+    }
+
+    public Result ChangePassword(string newHash)
+    {
+        if (string.IsNullOrWhiteSpace(newHash))
+            return Result.Failure("Hash da nova senha é obrigatório.");
+        PasswordHash = newHash;
+        FailedLoginAttempts = 0;
+        RequiresPasswordChange = false;
+        MarkUpdated();
+        return Result.Success();
     }
 
     public Result UpdateProfile(string displayName, string? avatarUrl)

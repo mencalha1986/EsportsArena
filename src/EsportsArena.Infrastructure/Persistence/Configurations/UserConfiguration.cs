@@ -23,6 +23,8 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
             .IsRequired()
             .HasDefaultValue(true);
         builder.Property(u => u.SubscriptionNotes).HasMaxLength(500);
+        builder.Property(u => u.FailedLoginAttempts).IsRequired().HasDefaultValue(0);
+        builder.Property(u => u.RequiresPasswordChange).IsRequired().HasDefaultValue(false);
         builder.Property(u => u.CreatedAt).IsRequired();
         builder.Property(u => u.UpdatedAt).IsRequired();
         builder.HasIndex(u => u.Email).IsUnique();

@@ -1,8 +1,10 @@
 using EsportsArena.API.Common;
+using EsportsArena.Application.Auth.Commands.ChangePassword;
 using EsportsArena.Application.Auth.Commands.Login;
 using EsportsArena.Application.Common;
 using EsportsArena.Application.Users.Commands.RegisterUser;
 using MediatR;
+using System.Security.Claims;
 
 namespace EsportsArena.API.Endpoints;
 
@@ -32,8 +34,24 @@ public static class AuthEndpoints
         })
         .WithName("Register")
         .WithSummary("Cria conta com e-mail, senha e perfil de plataforma, retorna JWT.");
+
+        group.MapPost("/change-password", async (ChangePasswordRequest req, IMediator mediator,
+            HttpContext ctx, CancellationToken ct) =>
+        {
+            var sub = ctx.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? ctx.User.FindFirstValue("sub");
+            if (!Guid.TryParse(sub, out var userId)) return Results.Unauthorized();
+
+            var result = await mediator.Send(new ChangePasswordCommand(userId, req.NewPassword), ct);
+            return result.IsSuccess
+                ? Results.Ok(ApiResponse<AuthTokenDto>.Ok(result.Value))
+                : Results.BadRequest(ApiResponse<AuthTokenDto>.Fail(result.Error));
+        })
+        .RequireAuthorization()
+        .WithName("ChangePassword")
+        .WithSummary("Troca a senha do usuário autenticado e retorna novo JWT.");
     }
 }
 
 public record LoginRequest(string Email, string Password);
 public record RegisterRequest(string Email, string Password, string PlatformId, string DisplayName);
+public record ChangePasswordRequest(string NewPassword);

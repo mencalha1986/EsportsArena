@@ -10,12 +10,14 @@ public sealed class LoginHandler : IRequestHandler<LoginCommand, Result<AuthToke
     private readonly IUserRepository _users;
     private readonly ITokenService _tokenService;
     private readonly IPasswordHasher _passwordHasher;
+    private readonly IUnitOfWork _uow;
 
-    public LoginHandler(IUserRepository users, ITokenService tokenService, IPasswordHasher passwordHasher)
+    public LoginHandler(IUserRepository users, ITokenService tokenService, IPasswordHasher passwordHasher, IUnitOfWork uow)
     {
         _users = users;
         _tokenService = tokenService;
         _passwordHasher = passwordHasher;
+        _uow = uow;
     }
 
     public async Task<Result<AuthTokenDto>> Handle(LoginCommand request, CancellationToken ct)
@@ -25,8 +27,24 @@ public sealed class LoginHandler : IRequestHandler<LoginCommand, Result<AuthToke
             return Result<AuthTokenDto>.Failure("E-mail ou senha inválidos.");
 
         if (!_passwordHasher.Verify(request.Password, user.PasswordHash))
-            return Result<AuthTokenDto>.Failure("E-mail ou senha inválidos.");
+        {
+            user.RecordFailedLogin();
+            await _uow.CommitAsync(ct);
 
-        return Result<AuthTokenDto>.Success(_tokenService.GenerateToken(user));
+            var attemptsLeft = Math.Max(0, 3 - user.FailedLoginAttempts);
+            var msg = user.RequiresPasswordChange
+                ? "Senha bloqueada após múltiplas tentativas. Faça login com a senha correta para redefini-la."
+                : attemptsLeft == 0
+                    ? "Senha bloqueada. Faça login com a senha correta para redefini-la."
+                    : $"E-mail ou senha inválidos. {attemptsLeft} tentativa{(attemptsLeft > 1 ? "s" : "")} restante{(attemptsLeft > 1 ? "s" : "")}.";
+
+            return Result<AuthTokenDto>.Failure(msg);
+        }
+
+        user.RecordSuccessfulLogin();
+        await _uow.CommitAsync(ct);
+
+        var token = _tokenService.GenerateToken(user);
+        return Result<AuthTokenDto>.Success(token with { RequiresPasswordChange = user.RequiresPasswordChange });
     }
 }
