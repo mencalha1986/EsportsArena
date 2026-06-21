@@ -19,14 +19,14 @@ export default function LoginPage() {
   const [shaking, setShaking] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Password-change step
-  const [pendingToken, setPendingToken] = useState<string | null>(null);
+  // Reset-locked step
+  const [lockedEmail, setLockedEmail] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showNewPass, setShowNewPass] = useState(false);
-  const [changingPassword, setChangingPassword] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
-  if (!loading && session && !pendingToken) {
+  if (!loading && session && !lockedEmail) {
     return <Navigate to={role === 'SuperAdmin' ? '/admin/dashboard' : '/championships'} replace />;
   }
 
@@ -39,9 +39,7 @@ export default function LoginPage() {
       const token = data.data.accessToken;
 
       if (data.data.requiresPasswordChange) {
-        // Hold the token in state — don't persist yet, force user to change password first
-        setPendingToken(token);
-        setError('');
+        setLockedEmail(email);
         return;
       }
 
@@ -49,6 +47,11 @@ export default function LoginPage() {
       const payload = JSON.parse(atob(token.split('.')[1]));
       navigate(payload.role === 'SuperAdmin' ? '/admin/dashboard' : '/championships');
     } catch (err: any) {
+      if (err.response?.status === 423) {
+        setLockedEmail(email);
+        setError('');
+        return;
+      }
       const msg = err.response?.data?.error ?? 'E-mail ou senha inválidos.';
       setError(msg);
       setShaking(true);
@@ -58,7 +61,7 @@ export default function LoginPage() {
     }
   }
 
-  async function handleChangePassword(e: React.FormEvent) {
+  async function handleResetLocked(e: React.FormEvent) {
     e.preventDefault();
     setError('');
     if (newPassword !== confirmPassword) {
@@ -69,30 +72,29 @@ export default function LoginPage() {
       setError('A nova senha deve ter pelo menos 6 caracteres.');
       return;
     }
-    setChangingPassword(true);
+    setResetting(true);
     try {
-      const { data } = await axios.post(
-        `${API}/api/auth/change-password`,
-        { newPassword },
-        { headers: { Authorization: `Bearer ${pendingToken}` } }
-      );
-      const newToken = data.data.accessToken;
-      saveToken(newToken);
-      const payload = JSON.parse(atob(newToken.split('.')[1]));
+      const { data } = await axios.post(`${API}/api/auth/reset-locked-password`, {
+        email: lockedEmail,
+        newPassword,
+      });
+      const token = data.data.accessToken;
+      saveToken(token);
+      const payload = JSON.parse(atob(token.split('.')[1]));
       navigate(payload.role === 'SuperAdmin' ? '/admin/dashboard' : '/championships');
     } catch (err: any) {
-      setError(err.response?.data?.error ?? 'Erro ao trocar a senha.');
+      setError(err.response?.data?.error ?? 'Erro ao redefinir a senha.');
     } finally {
-      setChangingPassword(false);
+      setResetting(false);
     }
   }
 
-  // — Password-change step —
-  if (pendingToken) {
+  // — Reset-locked step —
+  if (lockedEmail !== null) {
     return (
       <div className="auth-root">
         <div className="auth-form-panel">
-          <div style={{ maxWidth: 360, width: '100%', margin: '0 auto' }}>
+          <div style={{ maxWidth: 380, width: '100%', margin: '0 auto' }}>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 40 }}>
               <span style={{ fontSize: 22 }}>⚔️</span>
@@ -100,17 +102,31 @@ export default function LoginPage() {
             </div>
 
             <div style={{ marginBottom: 28 }}>
-              <h2 style={{ color: '#fff', fontSize: 24, fontWeight: 800, letterSpacing: -0.5, marginBottom: 6 }}>
+              <h2 style={{ color: '#fff', fontSize: 24, fontWeight: 800, letterSpacing: -0.5, marginBottom: 8 }}>
                 Redefinir senha
               </h2>
               <div style={{
-                background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)',
-                borderRadius: 8, padding: '10px 14px', marginTop: 12,
+                background: 'rgba(245,158,11,0.08)',
+                border: '1px solid rgba(245,158,11,0.3)',
+                borderRadius: 10,
+                padding: '12px 16px',
               }}>
-                <p style={{ color: 'var(--warning,#f59e0b)', fontSize: 13, margin: 0, lineHeight: 1.5 }}>
-                  Sua conta foi bloqueada após 3 tentativas incorretas. Crie uma nova senha para continuar.
+                <p style={{ color: 'var(--warning,#f59e0b)', fontSize: 13, margin: 0, lineHeight: 1.6 }}>
+                  Sua conta foi bloqueada após múltiplas tentativas incorretas. Crie uma nova senha para continuar.
                 </p>
               </div>
+            </div>
+
+            {/* Email (read-only) */}
+            <div className="field" style={{ marginBottom: 18 }}>
+              <label className="field-label">E-mail</label>
+              <input
+                className="input-field"
+                type="email"
+                value={lockedEmail}
+                readOnly
+                style={{ opacity: 0.6, cursor: 'not-allowed' }}
+              />
             </div>
 
             {error && (
@@ -120,7 +136,7 @@ export default function LoginPage() {
               </div>
             )}
 
-            <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+            <form onSubmit={handleResetLocked} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               <div className="field">
                 <label className="field-label">Nova senha</label>
                 <div className="input-wrapper">
@@ -143,34 +159,47 @@ export default function LoginPage() {
                     {showNewPass ? '🙈' : '👁'}
                   </button>
                 </div>
+                <PasswordStrengthBar password={newPassword} />
               </div>
 
               <div className="field">
                 <label className="field-label">Confirmar nova senha</label>
-                <input
-                  className="input-field"
-                  type={showNewPass ? 'text' : 'password'}
-                  value={confirmPassword}
-                  onChange={e => setConfirmPassword(e.target.value)}
-                  placeholder="Repita a nova senha"
-                  required
-                  autoComplete="new-password"
-                />
+                <div className="input-wrapper">
+                  <input
+                    className="input-field"
+                    type={showNewPass ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    placeholder="Repita a nova senha"
+                    required
+                    autoComplete="new-password"
+                  />
+                </div>
+                {confirmPassword && newPassword !== confirmPassword && (
+                  <p style={{ color: 'var(--danger,#ef4444)', fontSize: 12, marginTop: 4 }}>
+                    As senhas não coincidem.
+                  </p>
+                )}
+                {confirmPassword && newPassword === confirmPassword && newPassword.length >= 6 && (
+                  <p style={{ color: 'var(--success,#22c55e)', fontSize: 12, marginTop: 4 }}>
+                    ✓ Senhas coincidem.
+                  </p>
+                )}
               </div>
 
               <button
                 type="submit"
                 className="btn btn-primary btn-full btn-lg"
                 style={{ marginTop: 4 }}
-                disabled={changingPassword}
+                disabled={resetting || newPassword !== confirmPassword || newPassword.length < 6}
               >
-                {changingPassword ? 'Salvando...' : '🔐 Salvar nova senha'}
+                {resetting ? 'Salvando...' : 'Salvar nova senha'}
               </button>
             </form>
 
             <div style={{ marginTop: 20, textAlign: 'center' }}>
               <button
-                onClick={() => { setPendingToken(null); setError(''); }}
+                onClick={() => { setLockedEmail(null); setNewPassword(''); setConfirmPassword(''); setError(''); }}
                 style={{ background: 'none', border: 'none', color: 'var(--text-dim)', fontSize: 13, cursor: 'pointer' }}
               >
                 ← Voltar ao login
@@ -266,6 +295,48 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function PasswordStrengthBar({ password }: { password: string }) {
+  if (!password) return null;
+
+  const checks = [
+    password.length >= 6,
+    password.length >= 10,
+    /[A-Z]/.test(password),
+    /[0-9]/.test(password),
+    /[^a-zA-Z0-9]/.test(password),
+  ];
+  const score = checks.filter(Boolean).length;
+
+  const levels = [
+    { label: 'Muito fraca', color: '#ef4444' },
+    { label: 'Fraca',       color: '#f97316' },
+    { label: 'Razoável',    color: '#eab308' },
+    { label: 'Boa',         color: '#84cc16' },
+    { label: 'Forte',       color: '#22c55e' },
+  ];
+  const level = levels[Math.min(score, 4)];
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
+        {levels.map((_, i) => (
+          <div
+            key={i}
+            style={{
+              flex: 1,
+              height: 3,
+              borderRadius: 2,
+              background: i < score ? level.color : 'var(--border)',
+              transition: 'background 0.2s',
+            }}
+          />
+        ))}
+      </div>
+      <p style={{ fontSize: 11, color: level.color, margin: 0 }}>{level.label}</p>
     </div>
   );
 }

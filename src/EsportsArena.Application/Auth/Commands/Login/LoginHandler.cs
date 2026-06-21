@@ -31,12 +31,13 @@ public sealed class LoginHandler : IRequestHandler<LoginCommand, Result<AuthToke
             user.RecordFailedLogin();
             await _uow.CommitAsync(ct);
 
+            if (user.RequiresPasswordChange)
+                return Result<AuthTokenDto>.Failure("ACCOUNT_LOCKED");
+
             var attemptsLeft = Math.Max(0, 3 - user.FailedLoginAttempts);
-            var msg = user.RequiresPasswordChange
-                ? "Senha bloqueada após múltiplas tentativas. Faça login com a senha correta para redefini-la."
-                : attemptsLeft == 0
-                    ? "Senha bloqueada. Faça login com a senha correta para redefini-la."
-                    : $"E-mail ou senha inválidos. {attemptsLeft} tentativa{(attemptsLeft > 1 ? "s" : "")} restante{(attemptsLeft > 1 ? "s" : "")}.";
+            var msg = attemptsLeft == 0
+                ? "ACCOUNT_LOCKED"
+                : $"E-mail ou senha inválidos. {attemptsLeft} tentativa{(attemptsLeft > 1 ? "s" : "")} restante{(attemptsLeft > 1 ? "s" : "")}.";
 
             return Result<AuthTokenDto>.Failure(msg);
         }

@@ -1,6 +1,7 @@
 using EsportsArena.API.Common;
 using EsportsArena.Application.Auth.Commands.ChangePassword;
 using EsportsArena.Application.Auth.Commands.Login;
+using EsportsArena.Application.Auth.Commands.ResetLockedPassword;
 using EsportsArena.Application.Common;
 using EsportsArena.Application.Users.Commands.RegisterUser;
 using MediatR;
@@ -17,9 +18,11 @@ public static class AuthEndpoints
         group.MapPost("/login", async (LoginRequest req, IMediator mediator, CancellationToken ct) =>
         {
             var result = await mediator.Send(new LoginCommand(req.Email, req.Password), ct);
-            return result.IsSuccess
-                ? Results.Ok(ApiResponse<AuthTokenDto>.Ok(result.Value))
-                : Results.Unauthorized();
+            if (result.IsSuccess)
+                return Results.Ok(ApiResponse<AuthTokenDto>.Ok(result.Value));
+            if (result.Error == "ACCOUNT_LOCKED")
+                return Results.Json(ApiResponse<object>.Fail("Conta bloqueada. Redefina sua senha para continuar."), statusCode: 423);
+            return Results.Unauthorized();
         })
         .WithName("Login")
         .WithSummary("Autentica com e-mail e senha, retorna JWT.");
@@ -49,9 +52,20 @@ public static class AuthEndpoints
         .RequireAuthorization()
         .WithName("ChangePassword")
         .WithSummary("Troca a senha do usuário autenticado e retorna novo JWT.");
+
+        group.MapPost("/reset-locked-password", async (ResetLockedPasswordRequest req, IMediator mediator, CancellationToken ct) =>
+        {
+            var result = await mediator.Send(new ResetLockedPasswordCommand(req.Email, req.NewPassword), ct);
+            return result.IsSuccess
+                ? Results.Ok(ApiResponse<AuthTokenDto>.Ok(result.Value))
+                : Results.BadRequest(ApiResponse<AuthTokenDto>.Fail(result.Error));
+        })
+        .WithName("ResetLockedPassword")
+        .WithSummary("Redefine a senha de conta bloqueada por tentativas excessivas.");
     }
 }
 
 public record LoginRequest(string Email, string Password);
 public record RegisterRequest(string Email, string Password, string PlatformId, string DisplayName);
 public record ChangePasswordRequest(string NewPassword);
+public record ResetLockedPasswordRequest(string Email, string NewPassword);
