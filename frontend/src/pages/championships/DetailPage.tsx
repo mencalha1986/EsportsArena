@@ -136,7 +136,7 @@ export default function ChampionshipDetailPage() {
     setEnrolling(true);
     try {
       const payload = championship?.gameInscriptionMode === 'OwnIdentity' ? { identityName } : {};
-      const res = await api.post(`/api/v1/championships/${id}/enrollments`, payload);
+      await api.post(`/api/v1/championships/${id}/enrollments`, payload);
       setMessage({ type: 'success', text: 'Inscrição enviada! Aguarde a aprovação do organizador.' });
       setIdentityName('');
       // Refresh my enrollment
