@@ -1,4 +1,5 @@
 using EsportsArena.Domain.Entities;
+using EsportsArena.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -13,7 +14,7 @@ public sealed class EnrollmentConfiguration : IEntityTypeConfiguration<Enrollmen
         builder.Property(e => e.UserId).IsRequired();
         builder.Property(e => e.IdentityName).HasMaxLength(100);
         builder.Property(e => e.LicensedTeamId);
-        builder.Property(e => e.Status).IsRequired().HasConversion<string>().HasDefaultValue("Accepted");
+        builder.Property(e => e.Status).IsRequired().HasConversion<string>().HasDefaultValue(EnrollmentStatus.Accepted);
         builder.Property(e => e.WithdrewAt);
         builder.Property(e => e.CreatedAt).IsRequired();
         builder.Property(e => e.UpdatedAt).IsRequired();
