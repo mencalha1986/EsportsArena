@@ -55,6 +55,15 @@ const steps = [
 export default function LandingPage() {
   return (
     <div className="landing">
+      {/* ── NAVBAR ── */}
+      <nav className="landing-nav">
+        <span className="landing-nav-logo">⚔️ EsportsArena</span>
+        <div className="landing-nav-actions">
+          <Link to="/login" className="btn-outline btn-outline-sm">Entrar</Link>
+          <Link to="/register" className="btn-primary btn-primary-sm">Criar Conta</Link>
+        </div>
+      </nav>
+
       {/* ── HERO ── */}
       <section className="landing-hero">
         <div className="hero-badge">⚔️ Plataforma de Esports</div>
@@ -71,7 +80,8 @@ export default function LandingPage() {
 
         <div className="hero-ctas">
           <Link to="/register" className="btn-primary">Criar Conta Grátis</Link>
-          <Link to="/championships" className="btn-outline">Ver Campeonatos</Link>
+          <Link to="/login" className="btn-outline">Entrar</Link>
+          <Link to="/championships" className="btn-ghost">Ver Campeonatos</Link>
         </div>
 
         <div className="hero-stats">

@@ -5,6 +5,46 @@
   min-height: 100vh;
 }
 
+/* ─── NAVBAR ────────────────────────────────────────────────── */
+.landing-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  height: 60px;
+  background: rgba(13, 13, 26, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.landing-nav-logo {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+
+.landing-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-outline-sm {
+  padding: 8px 20px;
+  font-size: 0.875rem;
+}
+
+.btn-primary-sm {
+  padding: 8px 20px;
+  font-size: 0.875rem;
+}
+
 /* ─── HERO ─────────────────────────────────────────────────── */
 .landing-hero {
   min-height: 88vh;
@@ -105,6 +145,22 @@
   border-color: rgba(255, 255, 255, 0.4);
   color: #fff;
   transform: translateY(-1px);
+}
+
+.btn-ghost {
+  display: inline-block;
+  background: transparent;
+  color: #707090;
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 14px 24px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: color 0.18s;
+}
+
+.btn-ghost:hover {
+  color: #e0e0ff;
 }
 
 .hero-stats {
