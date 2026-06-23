@@ -2,6 +2,7 @@ using EsportsArena.API.Common;
 using EsportsArena.Application.Games.Commands.AddLicensedTeam;
 using EsportsArena.Application.Games.Commands.CreateGame;
 using EsportsArena.Application.Games.Queries.GetGames;
+using EsportsArena.Application.Games.Queries.GetLicensedTeams;
 using EsportsArena.Domain.Enums;
 using MediatR;
 
@@ -22,6 +23,21 @@ public static class GameEndpoints
         })
         .WithName("GetGames")
         .WithSummary("Lista todos os jogos ativos.");
+
+        group.MapGet("/{gameId:guid}/teams", async (
+            Guid gameId,
+            byte? minStars,
+            byte? maxStars,
+            IMediator mediator,
+            CancellationToken ct) =>
+        {
+            var result = await mediator.Send(new GetLicensedTeamsQuery(gameId, minStars, maxStars), ct);
+            return result.IsSuccess
+                ? Results.Ok(ApiResponse<IReadOnlyList<LicensedTeamDto>>.Ok(result.Value))
+                : Results.NotFound(ApiResponse<IReadOnlyList<LicensedTeamDto>>.Fail(result.Error));
+        })
+        .WithName("GetLicensedTeams")
+        .WithSummary("Lista times licenciados de um jogo com filtro opcional de estrelas.");
 
         adminGroup.MapPost("/", async (CreateGameRequest req, IMediator mediator, CancellationToken ct) =>
         {

@@ -11,6 +11,13 @@ interface Game {
   scoreDisplay: string;
 }
 
+interface LicensedTeamDto {
+  id: string;
+  name: string;
+  stars: number;
+  logoUrl: string | null;
+}
+
 
 const textareaStyle: React.CSSProperties = {
   width: '100%',
@@ -54,6 +61,9 @@ export default function NewChampionshipPage() {
   const [maxStars, setMaxStars] = useState(0);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [teams, setTeams] = useState<LicensedTeamDto[]>([]);
+  const [teamsLoading, setTeamsLoading] = useState(false);
+  const [teamsError, setTeamsError] = useState('');
 
   const selectedGame = games.find(g => g.id === gameId);
   const isLicensedTeams = selectedGame?.inscriptionMode === 'LicensedTeams';
@@ -61,6 +71,23 @@ export default function NewChampionshipPage() {
   useEffect(() => {
     api.get('/api/v1/games').then(r => setGames(r.data.data));
   }, []);
+
+  useEffect(() => {
+    if (!isLicensedTeams || !gameId) {
+      setTeams([]);
+      setTeamsError('');
+      return;
+    }
+    setTeamsLoading(true);
+    setTeamsError('');
+    const params = new URLSearchParams();
+    if (minStars > 0) params.set('minStars', String(minStars));
+    if (maxStars > 0) params.set('maxStars', String(maxStars));
+    api.get(`/api/v1/games/${gameId}/teams?${params}`)
+      .then(r => setTeams(r.data.data))
+      .catch(() => setTeamsError('Não foi possível carregar os times.'))
+      .finally(() => setTeamsLoading(false));
+  }, [gameId, minStars, maxStars, isLicensedTeams]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -216,6 +243,75 @@ export default function NewChampionshipPage() {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Preview de times disponíveis */}
+            {isLicensedTeams && gameId && (
+              <div className="field">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <label className="field-label" style={{ margin: 0 }}>Times disponíveis</label>
+                  {!teamsLoading && (
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                      {teams.length} time{teams.length !== 1 ? 's' : ''} disponíve{teams.length !== 1 ? 'is' : 'l'}
+                    </span>
+                  )}
+                </div>
+
+                {teamsError && (
+                  <p style={{ fontSize: 12, color: 'var(--error)', margin: '0 0 8px' }}>{teamsError}</p>
+                )}
+
+                <div style={{
+                  maxHeight: 220,
+                  overflowY: 'auto',
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+                  gap: 8,
+                  padding: 2,
+                }}>
+                  {teamsLoading
+                    ? Array.from({ length: 6 }).map((_, i) => (
+                        <div key={i} style={{
+                          height: 86,
+                          borderRadius: 'var(--radius)',
+                          background: 'rgba(255,255,255,0.05)',
+                          opacity: 0.5,
+                        }} />
+                      ))
+                    : teams.map(t => (
+                        <div key={t.id} style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: 6,
+                          padding: '10px 8px',
+                          borderRadius: 'var(--radius)',
+                          background: 'rgba(255,255,255,0.03)',
+                          border: '1px solid var(--border)',
+                          textAlign: 'center',
+                        }}>
+                          {t.logoUrl
+                            ? <img src={t.logoUrl} alt={t.name} style={{ width: 32, height: 32, objectFit: 'contain' }}
+                                onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                            : <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
+                          }
+                          <span style={{ fontWeight: 600, color: 'var(--text)', fontSize: 12, lineHeight: 1.2 }}>
+                            {t.name}
+                          </span>
+                          <span style={{ color: 'var(--warning)', fontSize: 10, letterSpacing: 1 }}>
+                            {'★'.repeat(t.stars)}
+                          </span>
+                        </div>
+                      ))
+                  }
+                </div>
+
+                {!teamsLoading && teams.length === 0 && !teamsError && (
+                  <p style={{ fontSize: 12, color: 'var(--text-dim)', textAlign: 'center', padding: '16px 0', margin: 0 }}>
+                    Nenhum time encontrado com esse filtro.
+                  </p>
+                )}
               </div>
             )}
 
