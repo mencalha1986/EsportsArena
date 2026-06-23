@@ -31,6 +31,15 @@ interface PendingEnrollment {
   userId: string;
   identityName?: string;
   createdAt: string;
+  userDisplayName?: string;
+  userPlatformId?: string;
+}
+
+interface PlayerSearchResult {
+  id: string;
+  platformId: string;
+  displayName: string;
+  avatarUrl?: string;
 }
 
 const STATUS_META: Record<string, { label: string; badge: string; color: string; dot: string }> = {
@@ -107,6 +116,12 @@ export default function ChampionshipDetailPage() {
   const [actioning, setActioning] = useState(false);
   const [reviewingId, setReviewingId] = useState<string | null>(null);
 
+  const [playerQuery, setPlayerQuery] = useState('');
+  const [playerResults, setPlayerResults] = useState<PlayerSearchResult[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [addingPlayerId, setAddingPlayerId] = useState<string | null>(null);
+  const [manualIdentityNames, setManualIdentityNames] = useState<Record<string, string>>({});
+
   const isOrganizer = role === 'SuperAdmin' || role === 'Admin';
 
   useEffect(() => {
@@ -130,6 +145,20 @@ export default function ChampionshipDetailPage() {
       .then(r => setPendingEnrollments(r.data.data ?? []))
       .catch(() => setPendingEnrollments([]));
   }, [id, isOrganizer, championship?.status]);
+
+  // Debounced player search
+  useEffect(() => {
+    if (!isOrganizer) return;
+    if (playerQuery.trim().length < 2) { setPlayerResults([]); return; }
+    const timer = setTimeout(() => {
+      setSearchLoading(true);
+      api.get(`/api/v1/users/search?q=${encodeURIComponent(playerQuery.trim())}`)
+        .then(r => setPlayerResults(r.data.data ?? []))
+        .catch(() => setPlayerResults([]))
+        .finally(() => setSearchLoading(false));
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [playerQuery, isOrganizer]);
 
   async function handleEnroll() {
     setMessage(null);
@@ -166,6 +195,24 @@ export default function ChampionshipDetailPage() {
       setChampionship(prev => prev ? { ...prev, status: 'InProgress' } : null);
     } finally {
       setActioning(false);
+    }
+  }
+
+  async function handleManualEnroll(player: PlayerSearchResult) {
+    setAddingPlayerId(player.id);
+    try {
+      const identityName = manualIdentityNames[player.id] ?? '';
+      await api.post(`/api/v1/championships/${id}/enrollments/manual`, {
+        userId: player.id,
+        identityName: identityName || null,
+      });
+      setMessage({ type: 'success', text: `${player.displayName} adicionado ao campeonato.` });
+      setPlayerResults(prev => prev.filter(p => p.id !== player.id));
+      setManualIdentityNames(prev => { const n = { ...prev }; delete n[player.id]; return n; });
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.response?.data?.error ?? 'Erro ao adicionar jogador.' });
+    } finally {
+      setAddingPlayerId(null);
     }
   }
 
@@ -391,6 +438,84 @@ export default function ChampionshipDetailPage() {
           </div>
         )}
 
+        {/* Organizer: add player by search */}
+        {isOrganizer && championship.status === 'EnrollmentsOpen' && (
+          <div style={{
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '24px 28px',
+            marginTop: 20,
+          }}>
+            <p style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.7, color: 'var(--text-dim)', margin: '0 0 16px 0' }}>
+              Adicionar jogador
+            </p>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+              <input
+                className="input-field"
+                placeholder="Buscar por e-mail ou nickname..."
+                value={playerQuery}
+                onChange={e => setPlayerQuery(e.target.value)}
+                style={{ fontSize: 14, padding: '10px 14px', flex: 1 }}
+              />
+              {searchLoading && (
+                <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>Buscando...</span>
+              )}
+            </div>
+
+            {playerQuery.trim().length >= 2 && !searchLoading && playerResults.length === 0 && (
+              <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>Nenhum jogador encontrado.</p>
+            )}
+
+            {playerResults.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {playerResults.map(player => (
+                  <div key={player.id} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    gap: 12, padding: '12px 16px',
+                    background: 'var(--surface-alt)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius)',
+                    flexWrap: 'wrap',
+                  }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
+                        {player.displayName}
+                        <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--accent)', marginLeft: 6 }}>
+                          @{player.platformId}
+                        </span>
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      {championship.gameInscriptionMode === 'OwnIdentity' && (
+                        <input
+                          className="input-field"
+                          placeholder="Nome do clube / dupla"
+                          value={manualIdentityNames[player.id] ?? ''}
+                          onChange={e => setManualIdentityNames(prev => ({ ...prev, [player.id]: e.target.value }))}
+                          style={{ fontSize: 13, padding: '8px 12px', width: 190 }}
+                        />
+                      )}
+                      <button
+                        className="btn btn-sm"
+                        style={{ background: 'rgba(99,102,241,0.15)', color: 'var(--accent)', border: '1px solid rgba(99,102,241,0.3)' }}
+                        disabled={
+                          addingPlayerId === player.id ||
+                          (championship.gameInscriptionMode === 'OwnIdentity' && !manualIdentityNames[player.id]?.trim())
+                        }
+                        onClick={() => handleManualEnroll(player)}
+                      >
+                        {addingPlayerId === player.id ? '...' : '+ Adicionar'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Organizer: pending enrollments panel */}
         {isOrganizer && championship.status === 'EnrollmentsOpen' && (
           <div style={{
@@ -424,10 +549,20 @@ export default function ChampionshipDetailPage() {
                     borderRadius: 'var(--radius)',
                     flexWrap: 'wrap',
                   }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>
-                        {e.identityName ?? <span style={{ color: 'var(--text-dim)', fontStyle: 'italic' }}>Sem identidade</span>}
-                      </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                      {(e.userDisplayName || e.userPlatformId) && (
+                        <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
+                          {e.userDisplayName}
+                          {e.userPlatformId && (
+                            <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--accent)', marginLeft: 6 }}>
+                              @{e.userPlatformId}
+                            </span>
+                          )}
+                        </span>
+                      )}
+                      {e.identityName && (
+                        <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{e.identityName}</span>
+                      )}
                       <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>
                         {new Date(e.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                       </span>

@@ -1,5 +1,6 @@
 using EsportsArena.API.Common;
 using EsportsArena.Application.Championships.Commands.RecordWithdrawal;
+using EsportsArena.Application.Enrollments.Commands.EnrollPlayerByOrganizer;
 using EsportsArena.Application.Enrollments.Commands.EnrollUser;
 using EsportsArena.Application.Enrollments.Commands.ReviewEnrollment;
 using EsportsArena.Domain.Interfaces;
@@ -29,13 +30,22 @@ public static class EnrollmentEndpoints
         .WithSummary("Lista inscrições ativas (pendentes e aceitas) de um campeonato.");
 
         // List pending enrollments — organizer only
-        champGroup.MapGet("/pending", async (Guid championshipId, IEnrollmentRepository enrollments, CancellationToken ct) =>
+        champGroup.MapGet("/pending", async (Guid championshipId, IEnrollmentRepository enrollments,
+            IUserRepository users, CancellationToken ct) =>
         {
             var list = await enrollments.GetPendingByChampionshipAsync(championshipId, ct);
-            return Results.Ok(ApiResponse<object>.Ok(list.Select(e => new
+            var userIds = list.Select(e => e.UserId).Distinct();
+            var userMap = (await users.GetByIdsAsync(userIds, ct)).ToDictionary(u => u.Id);
+            return Results.Ok(ApiResponse<object>.Ok(list.Select(e =>
             {
-                e.Id, e.UserId, e.IdentityName, e.LicensedTeamId,
-                Status = e.Status.ToString(), e.CreatedAt
+                userMap.TryGetValue(e.UserId, out var user);
+                return new
+                {
+                    e.Id, e.UserId, e.IdentityName, e.LicensedTeamId,
+                    Status = e.Status.ToString(), e.CreatedAt,
+                    UserDisplayName = user?.DisplayName,
+                    UserPlatformId = user?.PlatformId
+                };
             })));
         })
         .RequireAuthorization("AdminOrAbove")
@@ -62,6 +72,24 @@ public static class EnrollmentEndpoints
         .RequireAuthorization()
         .WithName("MyEnrollment")
         .WithSummary("Retorna a inscrição do usuário autenticado no campeonato.");
+
+        // Organizer manually enrolls a player (auto-accepted)
+        champGroup.MapPost("/manual", async (Guid championshipId, ManualEnrollRequest req, IMediator mediator,
+            HttpContext ctx, CancellationToken ct) =>
+        {
+            var organizerId = GetUserIdFromClaims(ctx);
+            if (organizerId == Guid.Empty) return Results.Unauthorized();
+
+            var command = new EnrollPlayerByOrganizerCommand(championshipId, organizerId, req.UserId, req.IdentityName);
+            var result = await mediator.Send(command, ct);
+            return result.IsSuccess
+                ? Results.Created($"/api/v1/championships/{championshipId}/enrollments/{result.Value}",
+                    ApiResponse<Guid>.Ok(result.Value))
+                : Results.BadRequest(ApiResponse<Guid>.Fail(result.Error));
+        })
+        .RequireAuthorization("AdminOrAbove")
+        .WithName("ManualEnrollPlayer")
+        .WithSummary("Organizador adiciona jogador diretamente ao campeonato (inscrição já aceita).");
 
         // Enroll in a championship
         champGroup.MapPost("/", async (Guid championshipId, EnrollRequest req, IMediator mediator,
@@ -134,3 +162,4 @@ public static class EnrollmentEndpoints
 }
 
 public record EnrollRequest(string? IdentityName = null);
+public record ManualEnrollRequest(Guid UserId, string? IdentityName = null);

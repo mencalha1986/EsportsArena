@@ -1,6 +1,7 @@
 using EsportsArena.API.Common;
 using EsportsArena.Application.Users.Queries.CheckPlatformIdAvailability;
 using EsportsArena.Application.Users.Queries.GetUserProfile;
+using EsportsArena.Application.Users.Queries.SearchPlayers;
 using EsportsArena.Domain.Interfaces;
 using MediatR;
 using System.Security.Claims;
@@ -41,6 +42,17 @@ public static class UserEndpoints
         .RequireAuthorization()
         .WithName("GetMyProfile")
         .WithSummary("Retorna o perfil do usuário autenticado com estatísticas.");
+
+        group.MapGet("/search", async (string q, IMediator mediator, CancellationToken ct) =>
+        {
+            var result = await mediator.Send(new SearchPlayersQuery(q ?? string.Empty), ct);
+            return result.IsSuccess
+                ? Results.Ok(ApiResponse<List<PlayerSearchResultDto>>.Ok(result.Value))
+                : Results.BadRequest(ApiResponse<List<PlayerSearchResultDto>>.Fail(result.Error));
+        })
+        .RequireAuthorization("AdminOrAbove")
+        .WithName("SearchPlayers")
+        .WithSummary("Busca jogadores por e-mail ou nickname (organizadores).");
 
         group.MapGet("/{platformId}", async (string platformId, IMediator mediator, CancellationToken ct) =>
         {

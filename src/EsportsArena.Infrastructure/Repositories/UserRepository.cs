@@ -1,4 +1,5 @@
 using EsportsArena.Domain.Entities;
+using EsportsArena.Domain.Enums;
 using EsportsArena.Domain.Interfaces;
 using EsportsArena.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -38,5 +39,22 @@ public sealed class UserRepository : BaseRepository<User>, IUserRepository
                 suggestions.Add(candidate);
         }
         return suggestions;
+    }
+
+    public async Task<List<User>> SearchByEmailOrPlatformIdAsync(string query, int limit = 10, CancellationToken ct = default)
+    {
+        var q = query.ToLowerInvariant();
+        return await Context.Users
+            .Where(u => u.Role == UserRole.Player && (u.Email.Contains(q) || u.PlatformId.Contains(q)))
+            .Take(limit)
+            .ToListAsync(ct);
+    }
+
+    public async Task<List<User>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default)
+    {
+        var idList = ids.ToList();
+        return await Context.Users
+            .Where(u => idList.Contains(u.Id))
+            .ToListAsync(ct);
     }
 }
