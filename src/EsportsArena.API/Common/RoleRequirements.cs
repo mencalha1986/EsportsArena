@@ -42,9 +42,8 @@ public sealed class AdminOrAboveHandler : AuthorizationHandler<AdminOrAboveRequi
 
         var user = await _users.GetByIdAsync(userId);
 
-        var allowed = user is not null && (
-            user.Role == UserRole.SuperAdmin ||
-            (user.Role == UserRole.Admin && user.IsActive));
+        var allowed = user is not null &&
+            user.Role == UserRole.Admin && user.IsActive;
 
         if (allowed) context.Succeed(requirement);
         else context.Fail();

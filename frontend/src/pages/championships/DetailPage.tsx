@@ -104,7 +104,7 @@ export default function ChampionshipDetailPage() {
   const { id } = useParams<{ id: string }>();
   const api = useApi();
   const { session } = useAuth();
-  const { role } = useUserRole();
+  const { role, isActive } = useUserRole();
 
   const [championship, setChampionship] = useState<ChampionshipDetail | null>(null);
   const [myEnrollment, setMyEnrollment] = useState<MyEnrollment | null | undefined>(undefined);
@@ -122,7 +122,7 @@ export default function ChampionshipDetailPage() {
   const [addingPlayerId, setAddingPlayerId] = useState<string | null>(null);
   const [manualIdentityNames, setManualIdentityNames] = useState<Record<string, string>>({});
 
-  const isOrganizer = role === 'SuperAdmin' || role === 'Admin';
+  const isOrganizer = role === 'Admin' && isActive;
 
   useEffect(() => {
     api.get(`/api/v1/championships/${id}`)

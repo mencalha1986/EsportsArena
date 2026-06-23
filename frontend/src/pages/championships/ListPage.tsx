@@ -48,7 +48,7 @@ export default function ChampionshipsListPage() {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
 
-  const canCreate = session && ((role === 'Admin' && isActive) || role === 'SuperAdmin');
+  const canCreate = session && role === 'Admin' && isActive;
 
   useEffect(() => {
     api.get('/api/v1/championships')

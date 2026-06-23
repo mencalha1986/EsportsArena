@@ -77,7 +77,7 @@ function Sidebar() {
       {/* Nav */}
       <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, padding: '12px 8px' }}>
         <SidebarLink to="/championships" icon="🏆" label="Campeonatos" />
-        {((role === 'Admin' && isActive) || role === 'SuperAdmin') && (
+        {role === 'Admin' && isActive && (
           <SidebarLink to="/organizer" icon="🎯" label="Organizar" />
         )}
         {role === 'SuperAdmin' && (
